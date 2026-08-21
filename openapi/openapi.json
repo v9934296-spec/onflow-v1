@@ -1,0 +1,5923 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OnFlow API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Root",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Root  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health",
+        "description": "Liveness plus whether clip-review providers are configured (no secret values).\nWhen gemini_configured is false, free-tier jobs may complete with review_method\nprovider_unavailable. Pro tier requires twelvelabs_configured unless rollback flag is set.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "boolean"
+                      }
+                    ]
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/deep": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health Deep",
+        "operationId": "health_deep_health_deep_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Deep Health Deep Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/me": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Get Me",
+        "operationId": "get_me_api_v1_account_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/account/profile-image": {
+      "put": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Update Profile Image",
+        "operationId": "update_profile_image_api_v1_account_profile_image_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileImageUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/account": {
+      "delete": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Delete My Account",
+        "operationId": "delete_my_account_api_v1_account_delete",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/account/export": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Export My Data",
+        "operationId": "export_my_data_api_v1_account_export_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Export My Data Api V1 Account Export Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/account/quota": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Get Account Quota",
+        "operationId": "get_account_quota_api_v1_account_quota_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountQuotaResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/consent": {
+      "get": {
+        "tags": [
+          "consent"
+        ],
+        "summary": "Get Consent Status",
+        "operationId": "get_consent_status_api_v1_consent_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentStatus"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/consent/grant": {
+      "post": {
+        "tags": [
+          "consent"
+        ],
+        "summary": "Grant Consent",
+        "operationId": "grant_consent_api_v1_consent_grant_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentGrantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentGrantResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/clip-retention": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Get Clip Retention",
+        "description": "Current clip retention consent status (ISO timestamp string when opted in).",
+        "operationId": "get_clip_retention_api_v1_auth_clip_retention_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClipRetentionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Post Clip Retention",
+        "description": "Opt in or out of clip retention for model training.\n\nWhen consent is True: clips from completed analyses will be retained on our servers\nto improve the coaching model.\n\nWhen consent is False: clips are deleted after analysis as usual.\nPreviously retained clips are NOT automatically deleted (contact support).",
+        "operationId": "post_clip_retention_api_v1_auth_clip_retention_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClipRetentionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClipRetentionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/clip-retention-consent": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Set Clip Retention Consent Legacy",
+        "description": "Legacy alias \u2014 same storage as POST /clip-retention (users table).",
+        "operationId": "set_clip_retention_consent_legacy_api_v1_auth_clip_retention_consent_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClipRetentionConsentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClipRetentionConsentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/session": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Create Session",
+        "operationId": "create_session_api_v1_auth_session_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/google": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Sign In With Google",
+        "operationId": "sign_in_with_google_api_v1_auth_google_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthSignInResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/apple": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Sign In With Apple",
+        "operationId": "sign_in_with_apple_api_v1_auth_apple_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthSignInResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/beta/client-events": {
+      "post": {
+        "tags": [
+          "beta"
+        ],
+        "summary": "Post Client Event",
+        "description": "First-party client funnel pings.\n\nAll allowlisted kinds are persisted to ``client_funnel_events`` for launch\nobservability (no third-party analytics required). Share kinds remain\navailable for admin share aggregates.",
+        "operationId": "post_client_event_api_v1_beta_client_events_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientBetaEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientBetaEventResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/share-stats": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Share Stats",
+        "description": "Aggregated share funnel counts (persisted client_funnel_events).\nRequires Bearer auth for a user with users.is_admin (bootstrap via ONFLOW_ADMIN_EMAILS).",
+        "operationId": "share_stats_api_v1_admin_share_stats_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 7,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Share Stats Api V1 Admin Share Stats Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clips/jobs": {
+      "get": {
+        "tags": [
+          "clips"
+        ],
+        "summary": "List Clip Jobs",
+        "operationId": "list_clip_jobs_api_v1_clips_jobs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 30,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobListItem"
+                  },
+                  "title": "Response List Clip Jobs Api V1 Clips Jobs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clips/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "clips"
+        ],
+        "summary": "Get Clip Job",
+        "operationId": "get_clip_job_api_v1_clips_jobs__job_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/JobPendingResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/JobProcessingResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/JobCompletedResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/JobFailedResponse"
+                    }
+                  ],
+                  "title": "Response Get Clip Job Api V1 Clips Jobs  Job Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clips/initiate-upload": {
+      "post": {
+        "tags": [
+          "clips-v1"
+        ],
+        "summary": "Initiate Clip Upload",
+        "operationId": "initiate_clip_upload_api_v1_clips_initiate_upload_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClipInitiateUploadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClipInitiateUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/clips/{clip_id}/complete-upload": {
+      "post": {
+        "tags": [
+          "clips-v1"
+        ],
+        "summary": "Complete Clip Upload",
+        "operationId": "complete_clip_upload_api_v1_clips__clip_id__complete_upload_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "clip_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Clip Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClipCompleteUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions": {
+      "post": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Create Session",
+        "operationId": "create_session_api_v1_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}": {
+      "get": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Get Session",
+        "operationId": "get_session_api_v1_sessions__session_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Update Session",
+        "operationId": "update_session_api_v1_sessions__session_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Delete Session",
+        "operationId": "delete_session_api_v1_sessions__session_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{session_id}/recap": {
+      "get": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Get Session Recap",
+        "description": "Aggregated progression recap for the session detail view (Step 5E).\n\nOwner-scoped. Returns the same safe 404 used elsewhere for a missing,\nsoft-deleted, or non-owned session (no ownership leak).",
+        "operationId": "get_session_recap_api_v1_sessions__session_id__recap_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionRecapDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/sessions": {
+      "get": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "List My Sessions",
+        "operationId": "list_my_sessions_api_v1_me_sessions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{session_id}/participants": {
+      "post": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Add Participant",
+        "operationId": "add_participant_api_v1_sessions__session_id__participants_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionParticipantAdd"
+              }
+            }
+          }
+        },
+        "responses": {
+          "501": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Add Participant Api V1 Sessions  Session Id  Participants Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sessions/{session_id}/participants/{participant_user_id}": {
+      "delete": {
+        "tags": [
+          "sessions"
+        ],
+        "summary": "Remove Participant",
+        "operationId": "remove_participant_api_v1_sessions__session_id__participants__participant_user_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "participant_user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Participant User Id"
+            }
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Remove Participant Api V1 Sessions  Session Id  Participants  Participant User Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/session-attempts/sync": {
+      "post": {
+        "tags": [
+          "session-attempts"
+        ],
+        "summary": "Sync Session Attempts",
+        "description": "Immutable batch sync of client-logged attempts.\n\nClient ids are primary keys. Replaying an identical payload is accepted and\nchanges nothing; replaying a *different* payload under an existing id is\nrejected. Nothing in this endpoint mutates an existing attempt.",
+        "operationId": "sync_session_attempts_api_v1_session_attempts_sync_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionAttemptSyncRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionAttemptSyncResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/attempts": {
+      "get": {
+        "tags": [
+          "session-attempts"
+        ],
+        "summary": "List Session Attempts",
+        "operationId": "list_session_attempts_api_v1_sessions__session_id__attempts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionAttemptListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tricks": {
+      "get": {
+        "tags": [
+          "tricks"
+        ],
+        "summary": "List Tricks",
+        "operationId": "list_tricks_api_v1_tricks_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrickListResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/feed": {
+      "get": {
+        "tags": [
+          "feed"
+        ],
+        "summary": "List Feed",
+        "description": "V1: returns the signed-in user's own propagated feed events.",
+        "operationId": "list_feed_api_v1_feed_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/feed/sse-ticket": {
+      "post": {
+        "tags": [
+          "feed"
+        ],
+        "summary": "Issue Feed Sse Ticket",
+        "description": "Mint a short-lived SSE ticket for EventSource ``?token=`` (not the session JWT).",
+        "operationId": "issue_feed_sse_ticket_api_v1_feed_sse_ticket_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Issue Feed Sse Ticket Api V1 Feed Sse Ticket Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/feed/stream": {
+      "get": {
+        "tags": [
+          "feed"
+        ],
+        "summary": "Feed Stream",
+        "description": "SSE stream of feed updates for the signed-in user (contracts \u00a78.2).",
+        "operationId": "feed_stream_api_v1_feed_stream_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lastEventId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Lasteventid"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/progression/timeline": {
+      "get": {
+        "tags": [
+          "progression"
+        ],
+        "summary": "Get Progression Timeline",
+        "description": "Owner-scoped, newest-first history of the user's completed sessions.\n\nOffset pagination (``page``/``page_size``); lightweight session previews only.",
+        "operationId": "get_progression_timeline_api_v1_progression_timeline_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressionTimelineResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/progression/tricks/{trick_name}/compare": {
+      "get": {
+        "tags": [
+          "progression"
+        ],
+        "summary": "Get Trick Clip Compare",
+        "description": "Owner-scoped oldest-vs-newest clip comparison for one trick (Step 5G).",
+        "operationId": "get_trick_clip_compare_api_v1_progression_tricks__trick_name__compare_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trick_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Trick Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrickClipCompareResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stats/progression/overview": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Get Progression Overview",
+        "description": "P.T.E. Tech 1.0 \u2014 full progression snapshot for dashboard.",
+        "operationId": "get_progression_overview_api_v1_stats_progression_overview_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Progression Overview Api V1 Stats Progression Overview Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/stats/milestones": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Get Milestones",
+        "description": "P.T.E. Tech 1.0 \u2014 all milestones unlocked by this user.",
+        "operationId": "get_milestones_api_v1_stats_milestones_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Get Milestones Api V1 Stats Milestones Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/stats/progression/whats-next": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Get Whats Next",
+        "description": "P.T.E. Tech 1.0 \u2014 single focus recommendation from recent Gemini coaching.",
+        "operationId": "get_whats_next_api_v1_stats_progression_whats_next_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Whats Next Api V1 Stats Progression Whats Next Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/stats/tricks": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Get Trick Stats",
+        "operationId": "get_trick_stats_api_v1_stats_tricks_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Get Trick Stats Api V1 Stats Tricks Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/stats/tricks/{trick_name}": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Get Trick Detail",
+        "operationId": "get_trick_detail_api_v1_stats_tricks__trick_name__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trick_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Trick Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Trick Detail Api V1 Stats Tricks  Trick Name  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stats/tricks/{trick_name}/progression": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Get Trick Progression",
+        "description": "P.T.E. Tech 1.0 \u2014 merged trick detail + compare + coaching timeline.",
+        "operationId": "get_trick_progression_api_v1_stats_tricks__trick_name__progression_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trick_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Trick Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Trick Progression Api V1 Stats Tricks  Trick Name  Progression Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stats/sessions/latest": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Get Latest Session",
+        "operationId": "get_latest_session_api_v1_stats_sessions_latest_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Latest Session Api V1 Stats Sessions Latest Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/stats/sessions/{session_id}": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "summary": "Get Session Detail",
+        "operationId": "get_session_detail_api_v1_stats_sessions__session_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Session Detail Api V1 Stats Sessions  Session Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/lines": {
+      "get": {
+        "tags": [
+          "lines"
+        ],
+        "summary": "List Lines",
+        "description": "List all custom lines with attempt stats.",
+        "operationId": "list_lines_api_v1_lines_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List Lines Api V1 Lines Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "lines"
+        ],
+        "summary": "Create Line",
+        "description": "Create a custom line definition.",
+        "operationId": "create_line_api_v1_lines_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLineRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Line Api V1 Lines Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/lines/{line_id}": {
+      "get": {
+        "tags": [
+          "lines"
+        ],
+        "summary": "Get Line",
+        "description": "Get a single line with full attempt history.",
+        "operationId": "get_line_api_v1_lines__line_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Line Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Line Api V1 Lines  Line Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "lines"
+        ],
+        "summary": "Update Line",
+        "description": "Update a line's name or trick sequence.",
+        "operationId": "update_line_api_v1_lines__line_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Line Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLineRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Line Api V1 Lines  Line Id  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "lines"
+        ],
+        "summary": "Delete Line",
+        "description": "Delete a line and all its attempts.",
+        "operationId": "delete_line_api_v1_lines__line_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Line Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Delete Line Api V1 Lines  Line Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/lines/{line_id}/attempts": {
+      "post": {
+        "tags": [
+          "lines"
+        ],
+        "summary": "Record Line Attempt",
+        "description": "Record an attempt of a custom line.",
+        "operationId": "record_line_attempt_api_v1_lines__line_id__attempts_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "line_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Line Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "landed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "unclear",
+              "title": "Landed"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Record Line Attempt Api V1 Lines  Line Id  Attempts Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/billing/sync": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Sync Billing",
+        "description": "Link the caller's RevenueCat customer id and return current entitlement state.\n\nThis does NOT change entitlements. Tier changes (purchase, renewal, expiration,\ncancellation) and Re-Up bonus credits are applied exclusively by the authenticated\nRevenueCat webhook, which is the single source of truth. After a purchase the client\nshould call this to link its RC id, then refetch entitlement state once the webhook\nlands (typically within seconds).",
+        "operationId": "sync_billing_api_v1_billing_sync_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/webhooks/revenuecat": {
+      "post": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Revenuecat Webhook",
+        "description": "Apply authenticated RevenueCat subscription and Re-Up events.",
+        "operationId": "revenuecat_webhook_api_v1_webhooks_revenuecat_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Revenuecat Webhook Api V1 Webhooks Revenuecat Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccountQuotaResponse": {
+        "properties": {
+          "tier": {
+            "type": "string",
+            "title": "Tier"
+          },
+          "analyses_remaining": {
+            "type": "integer",
+            "title": "Analyses Remaining"
+          },
+          "trial_expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Expires At"
+          },
+          "subscription_status": {
+            "type": "string",
+            "title": "Subscription Status"
+          },
+          "bonus_analyses": {
+            "type": "integer",
+            "title": "Bonus Analyses"
+          },
+          "monthly_free_remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Free Remaining",
+            "description": "None when Pro/Coach (unlimited analyses)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "tier",
+          "analyses_remaining",
+          "subscription_status",
+          "bonus_analyses"
+        ],
+        "title": "AccountQuotaResponse"
+      },
+      "ActionableCuePayload": {
+        "properties": {
+          "cue": {
+            "type": "string",
+            "title": "Cue"
+          },
+          "why_it_matters": {
+            "type": "string",
+            "title": "Why It Matters"
+          },
+          "drill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drill"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cue",
+          "why_it_matters"
+        ],
+        "title": "ActionableCuePayload"
+      },
+      "AttemptCompareLatestPayload": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "landed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landed"
+          },
+          "review_readiness": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Readiness"
+          },
+          "primary_issue_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Issue Key"
+          },
+          "primary_issue_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Issue Label"
+          },
+          "best_cue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Cue"
+          },
+          "best_drill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Drill"
+          },
+          "technical_limit_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technical Limit Summary"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "AttemptCompareLatestPayload"
+      },
+      "AttemptComparePayload": {
+        "properties": {
+          "compare_available": {
+            "type": "boolean",
+            "title": "Compare Available"
+          },
+          "trick_name": {
+            "type": "string",
+            "title": "Trick Name"
+          },
+          "baseline_window_count": {
+            "type": "integer",
+            "title": "Baseline Window Count"
+          },
+          "latest_attempt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttemptCompareLatestPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "previous_attempts": {
+            "items": {
+              "$ref": "#/components/schemas/AttemptComparePreviousPayload"
+            },
+            "type": "array",
+            "title": "Previous Attempts"
+          },
+          "improvements": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Improvements"
+          },
+          "repeated_issues": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Repeated Issues"
+          },
+          "regressions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Regressions"
+          },
+          "compare_summary": {
+            "type": "string",
+            "title": "Compare Summary"
+          },
+          "best_next_focus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Next Focus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "compare_available",
+          "trick_name",
+          "baseline_window_count",
+          "compare_summary"
+        ],
+        "title": "AttemptComparePayload"
+      },
+      "AttemptComparePreviousPayload": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "landed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landed"
+          },
+          "review_readiness": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Readiness"
+          },
+          "primary_issue_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Issue Key"
+          },
+          "primary_issue_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Issue Label"
+          },
+          "best_cue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Cue"
+          },
+          "best_drill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Drill"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "AttemptComparePreviousPayload"
+      },
+      "ClientBetaEventRequest": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Kind"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "share_target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Target"
+          },
+          "error_detail": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Detail"
+          },
+          "ref_source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ref Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "ClientBetaEventRequest"
+      },
+      "ClientBetaEventResponse": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "ClientBetaEventResponse"
+      },
+      "ClipCompleteUploadResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "upload_status": {
+            "type": "string",
+            "title": "Upload Status"
+          },
+          "storage_key": {
+            "type": "string",
+            "title": "Storage Key"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "width_px": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width Px"
+          },
+          "height_px": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height Px"
+          },
+          "content_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Type"
+          },
+          "trick_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trick Id"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
+          "landed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landed"
+          },
+          "pte_rating": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pte Rating"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "estimated_analysis_completion_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Analysis Completion At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "upload_status",
+          "storage_key",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ClipCompleteUploadResponse"
+      },
+      "ClipInitiateUploadRequest": {
+        "properties": {
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "duration_seconds": {
+            "type": "number",
+            "maximum": 30.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Duration Seconds"
+          },
+          "width_px": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Width Px"
+          },
+          "height_px": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Height Px"
+          },
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "video/mp4",
+              "video/quicktime"
+            ],
+            "title": "Content Type"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "maximum": 104857600.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Size Bytes"
+          },
+          "client_hint_trick_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Hint Trick Id"
+          },
+          "captured_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Captured At",
+            "description": "When the skater filmed the clip. Required for the launch client so an ended session can accept a delayed upload only when capture predates ended_at. Omitted by onflow-lite; the 24h window still applies."
+          }
+        },
+        "type": "object",
+        "required": [
+          "duration_seconds",
+          "width_px",
+          "height_px",
+          "content_type",
+          "size_bytes"
+        ],
+        "title": "ClipInitiateUploadRequest"
+      },
+      "ClipInitiateUploadResponse": {
+        "properties": {
+          "clip_id": {
+            "type": "string",
+            "title": "Clip Id"
+          },
+          "upload_url": {
+            "type": "string",
+            "title": "Upload Url"
+          },
+          "upload_method": {
+            "type": "string",
+            "const": "PUT",
+            "title": "Upload Method",
+            "default": "PUT"
+          },
+          "upload_expires_at": {
+            "type": "string",
+            "title": "Upload Expires At"
+          },
+          "storage_key": {
+            "type": "string",
+            "title": "Storage Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "clip_id",
+          "upload_url",
+          "upload_expires_at",
+          "storage_key"
+        ],
+        "title": "ClipInitiateUploadResponse"
+      },
+      "ClipResultPayload": {
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Schema Version",
+            "default": 1
+          },
+          "analysis_type": {
+            "type": "string",
+            "const": "skate_clip_review",
+            "title": "Analysis Type",
+            "default": "skate_clip_review"
+          },
+          "clip_label": {
+            "type": "string",
+            "title": "Clip Label"
+          },
+          "review_summary": {
+            "type": "string",
+            "title": "Review Summary"
+          },
+          "review_readiness": {
+            "type": "string",
+            "enum": [
+              "usable",
+              "limited",
+              "insufficient"
+            ],
+            "title": "Review Readiness"
+          },
+          "video_playback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Playback Url"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
+          "quality_signals": {
+            "$ref": "#/components/schemas/QualitySignalsPayload"
+          },
+          "observations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Observations"
+          },
+          "uncertainty_notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Uncertainty Notes"
+          },
+          "processing_notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Processing Notes"
+          },
+          "skate_clip_review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SkateClipReviewBlockPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coaching": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CoachingObservations"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "landed": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "yes",
+                  "no",
+                  "unclear"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landed"
+          },
+          "land_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 10.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Land Score"
+          },
+          "primary_issue_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Issue Key"
+          },
+          "primary_issue_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Issue Label"
+          },
+          "best_cue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Cue"
+          },
+          "best_drill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Drill"
+          },
+          "review_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Method"
+          },
+          "gemini_used": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gemini Used"
+          },
+          "technical_limit_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technical Limit Summary"
+          },
+          "first_actionable_cue_shown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Actionable Cue Shown"
+          },
+          "first_drill_shown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Drill Shown"
+          },
+          "normalized_review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NormalizedReviewPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expected_mechanics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExpectedMechanicsPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attempt_compare": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttemptComparePayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "session_recap": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SessionRecapPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "clip_label",
+          "review_summary",
+          "review_readiness",
+          "quality_signals"
+        ],
+        "title": "ClipResultPayload"
+      },
+      "ClipRetentionConsentRequest": {
+        "properties": {
+          "consent": {
+            "type": "boolean",
+            "title": "Consent",
+            "description": "Opt in (true) or withdraw (false) clip retention for training."
+          }
+        },
+        "type": "object",
+        "required": [
+          "consent"
+        ],
+        "title": "ClipRetentionConsentRequest"
+      },
+      "ClipRetentionConsentResponse": {
+        "properties": {
+          "clip_retention_consent": {
+            "type": "boolean",
+            "title": "Clip Retention Consent"
+          },
+          "clip_retention_consent_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clip Retention Consent At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "clip_retention_consent",
+          "clip_retention_consent_at"
+        ],
+        "title": "ClipRetentionConsentResponse"
+      },
+      "ClipRetentionRequest": {
+        "properties": {
+          "consent": {
+            "type": "boolean",
+            "title": "Consent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "consent"
+        ],
+        "title": "ClipRetentionRequest"
+      },
+      "ClipRetentionResponse": {
+        "properties": {
+          "clip_retention_consent": {
+            "type": "boolean",
+            "title": "Clip Retention Consent"
+          },
+          "clip_retention_consent_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clip Retention Consent At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "clip_retention_consent"
+        ],
+        "title": "ClipRetentionResponse"
+      },
+      "CoachingObservations": {
+        "properties": {
+          "body_position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body Position"
+          },
+          "foot_placement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Foot Placement"
+          },
+          "timing": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timing"
+          },
+          "board_control": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Board Control"
+          },
+          "commitment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commitment"
+          },
+          "balance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance"
+          },
+          "style_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Style Notes"
+          },
+          "improvement_drill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Improvement Drill"
+          }
+        },
+        "type": "object",
+        "title": "CoachingObservations"
+      },
+      "ConsentGrantRequest": {
+        "properties": {
+          "copy_version": {
+            "type": "string",
+            "title": "Copy Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "copy_version"
+        ],
+        "title": "ConsentGrantRequest"
+      },
+      "ConsentGrantResponse": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ConsentStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ConsentGrantResponse"
+      },
+      "ConsentStatus": {
+        "properties": {
+          "granted": {
+            "type": "boolean",
+            "title": "Granted"
+          },
+          "granted_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Granted At"
+          },
+          "copy_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copy Version"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "granted",
+          "granted_at",
+          "copy_version",
+          "source"
+        ],
+        "title": "ConsentStatus"
+      },
+      "CreateLineRequest": {
+        "properties": {
+          "line_name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Line Name"
+          },
+          "trick_sequence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 2,
+            "title": "Trick Sequence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "line_name",
+          "trick_sequence"
+        ],
+        "title": "CreateLineRequest"
+      },
+      "ExpectedMechanicsCheckpointPayload": {
+        "properties": {
+          "expected": {
+            "type": "string",
+            "title": "Expected"
+          },
+          "observed": {
+            "type": "string",
+            "title": "Observed"
+          },
+          "impact": {
+            "type": "string",
+            "title": "Impact"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected",
+          "observed",
+          "impact"
+        ],
+        "title": "ExpectedMechanicsCheckpointPayload"
+      },
+      "ExpectedMechanicsPayload": {
+        "properties": {
+          "trick_name": {
+            "type": "string",
+            "title": "Trick Name"
+          },
+          "overview": {
+            "type": "string",
+            "title": "Overview"
+          },
+          "checkpoints": {
+            "items": {
+              "$ref": "#/components/schemas/ExpectedMechanicsCheckpointPayload"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 2,
+            "title": "Checkpoints"
+          },
+          "best_next_try": {
+            "type": "string",
+            "title": "Best Next Try"
+          },
+          "drill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drill"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trick_name",
+          "overview",
+          "checkpoints",
+          "best_next_try"
+        ],
+        "title": "ExpectedMechanicsPayload"
+      },
+      "FeedEventItemResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "user": {
+            "$ref": "#/components/schemas/FeedUserResponse"
+          },
+          "event_type": {
+            "type": "string",
+            "title": "Event Type"
+          },
+          "event_version": {
+            "type": "string",
+            "title": "Event Version"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At"
+          },
+          "reactions_summary": {
+            "$ref": "#/components/schemas/ReactionsSummaryResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user",
+          "event_type",
+          "event_version",
+          "payload",
+          "generated_at",
+          "reactions_summary"
+        ],
+        "title": "FeedEventItemResponse"
+      },
+      "FeedListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FeedEventItemResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "lifecycle_stage": {
+            "type": "string",
+            "title": "Lifecycle Stage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "lifecycle_stage"
+        ],
+        "title": "FeedListResponse"
+      },
+      "FeedUserResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "tag_name": {
+            "type": "string",
+            "title": "Tag Name"
+          },
+          "profile_photo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Photo Url"
+          },
+          "tier": {
+            "type": "string",
+            "title": "Tier",
+            "default": "flow"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "username",
+          "tag_name"
+        ],
+        "title": "FeedUserResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "JobCompletedResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "const": "completed",
+            "title": "Status"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "result": {
+            "$ref": "#/components/schemas/ClipResultPayload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "updated_at",
+          "result"
+        ],
+        "title": "JobCompletedResponse"
+      },
+      "JobFailedResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "const": "failed",
+            "title": "Status"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "failure_reason": {
+            "type": "string",
+            "title": "Failure Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "updated_at",
+          "failure_reason"
+        ],
+        "title": "JobFailedResponse"
+      },
+      "JobListItem": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "completed",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "clip_label": {
+            "type": "string",
+            "title": "Clip Label"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          },
+          "video_playback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Playback Url"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "clip_label",
+          "updated_at"
+        ],
+        "title": "JobListItem"
+      },
+      "JobPendingResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "const": "pending",
+            "title": "Status"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "updated_at"
+        ],
+        "title": "JobPendingResponse"
+      },
+      "JobProcessingResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "const": "processing",
+            "title": "Status"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "updated_at"
+        ],
+        "title": "JobProcessingResponse"
+      },
+      "MeResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "tier": {
+            "type": "string",
+            "title": "Tier"
+          },
+          "profile_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Image Url"
+          },
+          "consent": {
+            "$ref": "#/components/schemas/ConsentStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "email",
+          "tier",
+          "consent"
+        ],
+        "title": "MeResponse"
+      },
+      "MechanicsDimensionPayload": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 10.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "assessment": {
+            "type": "string",
+            "title": "Assessment"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "assessment"
+        ],
+        "title": "MechanicsDimensionPayload"
+      },
+      "NormalizedReviewPayload": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "what_you_did_right": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "What You Did Right"
+          },
+          "what_to_fix": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "What To Fix"
+          },
+          "drill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drill"
+          },
+          "model": {
+            "type": "string",
+            "const": "gemini",
+            "title": "Model",
+            "default": "gemini"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary"
+        ],
+        "title": "NormalizedReviewPayload",
+        "description": "Stable mobile-friendly slice derived from Gemini output."
+      },
+      "OAuthSignInResponse": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "is_new_user": {
+            "type": "boolean",
+            "title": "Is New User"
+          },
+          "bonus_analyses_remaining": {
+            "type": "integer",
+            "title": "Bonus Analyses Remaining"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "user_id",
+          "is_new_user",
+          "bonus_analyses_remaining"
+        ],
+        "title": "OAuthSignInResponse"
+      },
+      "ProfileImageUpdateRequest": {
+        "properties": {
+          "profile_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Image Url"
+          }
+        },
+        "type": "object",
+        "title": "ProfileImageUpdateRequest"
+      },
+      "ProgressionTimelineItem": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "spot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spot"
+          },
+          "focus_trick": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Focus Trick"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "clips_count": {
+            "type": "integer",
+            "title": "Clips Count",
+            "default": 0
+          },
+          "attempt_count": {
+            "type": "integer",
+            "title": "Attempt Count",
+            "default": 0
+          },
+          "best_pte_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Pte Score"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id"
+        ],
+        "title": "ProgressionTimelineItem",
+        "description": "One session preview in the progression timeline. Lightweight by design."
+      },
+      "ProgressionTimelineResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProgressionTimelineItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More"
+          }
+        },
+        "type": "object",
+        "required": [
+          "page",
+          "page_size",
+          "has_more"
+        ],
+        "title": "ProgressionTimelineResponse",
+        "description": "Owner-scoped, offset-paginated progression history (newest-first)."
+      },
+      "ProviderTokenRequest": {
+        "properties": {
+          "id_token": {
+            "type": "string",
+            "minLength": 10,
+            "title": "Id Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id_token"
+        ],
+        "title": "ProviderTokenRequest"
+      },
+      "QualitySignalsPayload": {
+        "properties": {
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "frames_sampled": {
+            "type": "integer",
+            "title": "Frames Sampled",
+            "default": 0
+          },
+          "motion_detected": {
+            "type": "boolean",
+            "title": "Motion Detected",
+            "default": false
+          },
+          "video_readable": {
+            "type": "boolean",
+            "title": "Video Readable",
+            "default": false
+          },
+          "fps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fps"
+          },
+          "frame_count_estimated": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame Count Estimated"
+          },
+          "mean_brightness_0_1": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Brightness 0 1"
+          },
+          "laplacian_var_mean": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Laplacian Var Mean"
+          },
+          "mechanics_dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/MechanicsDimensionPayload"
+            },
+            "type": "array",
+            "title": "Mechanics Dimensions"
+          }
+        },
+        "type": "object",
+        "title": "QualitySignalsPayload"
+      },
+      "ReactionBucketResponse": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          },
+          "viewer_reacted": {
+            "type": "boolean",
+            "title": "Viewer Reacted",
+            "default": false
+          },
+          "reactor_user_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reactor User Ids"
+          }
+        },
+        "type": "object",
+        "title": "ReactionBucketResponse"
+      },
+      "ReactionsSummaryResponse": {
+        "properties": {
+          "fire": {
+            "$ref": "#/components/schemas/ReactionBucketResponse"
+          },
+          "saw_it": {
+            "$ref": "#/components/schemas/ReactionBucketResponse"
+          },
+          "same_battle": {
+            "$ref": "#/components/schemas/ReactionBucketResponse"
+          },
+          "progression": {
+            "$ref": "#/components/schemas/ReactionBucketResponse"
+          }
+        },
+        "type": "object",
+        "title": "ReactionsSummaryResponse"
+      },
+      "SessionAttemptIn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "session_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Session Id"
+          },
+          "trick_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Trick Id"
+          },
+          "canonical_name": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Canonical Name"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "landed",
+              "missed"
+            ],
+            "title": "Outcome"
+          },
+          "logged_at": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Logged At",
+            "description": "ISO-8601 timestamp from the client clock."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "session_id",
+          "trick_id",
+          "canonical_name",
+          "outcome",
+          "logged_at"
+        ],
+        "title": "SessionAttemptIn"
+      },
+      "SessionAttemptListResponse": {
+        "properties": {
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/SessionAttemptOut"
+            },
+            "type": "array",
+            "title": "Attempts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempts"
+        ],
+        "title": "SessionAttemptListResponse"
+      },
+      "SessionAttemptOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "trick_id": {
+            "type": "string",
+            "title": "Trick Id"
+          },
+          "canonical_name": {
+            "type": "string",
+            "title": "Canonical Name"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "landed",
+              "missed"
+            ],
+            "title": "Outcome"
+          },
+          "logged_at": {
+            "type": "string",
+            "title": "Logged At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "session_id",
+          "trick_id",
+          "canonical_name",
+          "outcome",
+          "logged_at"
+        ],
+        "title": "SessionAttemptOut"
+      },
+      "SessionAttemptRejected": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "missing_id",
+              "invalid_logged_at",
+              "session_not_found",
+              "forbidden",
+              "attempt_deleted",
+              "session_immutable",
+              "outcome_immutable",
+              "attempt_immutable",
+              "duplicate_in_batch"
+            ],
+            "title": "Reason",
+            "description": "Machine-readable cause. Clients branch on this value and never on prose."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "reason"
+        ],
+        "title": "SessionAttemptRejected"
+      },
+      "SessionAttemptSyncRequest": {
+        "properties": {
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/SessionAttemptIn"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Attempts"
+          }
+        },
+        "type": "object",
+        "title": "SessionAttemptSyncRequest"
+      },
+      "SessionAttemptSyncResponse": {
+        "properties": {
+          "accepted": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Accepted"
+          },
+          "rejected": {
+            "items": {
+              "$ref": "#/components/schemas/SessionAttemptRejected"
+            },
+            "type": "array",
+            "title": "Rejected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accepted",
+          "rejected"
+        ],
+        "title": "SessionAttemptSyncResponse"
+      },
+      "SessionClipSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "trick_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trick Id"
+          },
+          "trick_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trick Display"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
+          "landed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landed"
+          },
+          "pte_rating": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pte Rating"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "is_first_land": {
+            "type": "boolean",
+            "title": "Is First Land",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at"
+        ],
+        "title": "SessionClipSummary"
+      },
+      "SessionCreate": {
+        "properties": {
+          "spot_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spot Label"
+          },
+          "focus_trick": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Focus Trick"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          }
+        },
+        "type": "object",
+        "title": "SessionCreate"
+      },
+      "SessionCreateRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "minLength": 3,
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "SessionCreateRequest"
+      },
+      "SessionCreateResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "session_token": {
+            "type": "string",
+            "title": "Session Token"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "session_token",
+          "email"
+        ],
+        "title": "SessionCreateResponse"
+      },
+      "SessionListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "spot_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spot Label"
+          },
+          "focus_trick": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Focus Trick"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "clip_count": {
+            "type": "integer",
+            "title": "Clip Count",
+            "default": 0
+          },
+          "attempt_count": {
+            "type": "integer",
+            "title": "Attempt Count",
+            "default": 0
+          },
+          "breakthrough_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breakthrough Note"
+          },
+          "tricks_attempted": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tricks Attempted"
+          },
+          "preview_thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Thumbnail Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "started_at"
+        ],
+        "title": "SessionListItem"
+      },
+      "SessionListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SessionListItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "SessionListResponse"
+      },
+      "SessionParticipantAdd": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "SessionParticipantAdd"
+      },
+      "SessionParticipantResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "tag_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag Name"
+          },
+          "profile_photo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Photo Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "SessionParticipantResponse"
+      },
+      "SessionRecapClip": {
+        "properties": {
+          "clip_id": {
+            "type": "string",
+            "title": "Clip Id"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
+          "video_playback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Playback Url"
+          },
+          "trick": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trick"
+          },
+          "stance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stance"
+          },
+          "landed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landed"
+          },
+          "pte_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pte Score"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "clip_id",
+          "created_at"
+        ],
+        "title": "SessionRecapClip",
+        "description": "One clip inside a session recap detail (Step 5E)."
+      },
+      "SessionRecapDetailResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "spot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spot"
+          },
+          "focus_trick": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Focus Trick"
+          },
+          "clips_count": {
+            "type": "integer",
+            "title": "Clips Count",
+            "default": 0
+          },
+          "attempts_count": {
+            "type": "integer",
+            "title": "Attempts Count",
+            "default": 0
+          },
+          "landed_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landed Count"
+          },
+          "landed_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landed Rate"
+          },
+          "best_pte_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Pte Score"
+          },
+          "average_pte_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Pte Score"
+          },
+          "breakthrough_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breakthrough Note"
+          },
+          "clips": {
+            "items": {
+              "$ref": "#/components/schemas/SessionRecapClip"
+            },
+            "type": "array",
+            "title": "Clips"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "started_at"
+        ],
+        "title": "SessionRecapDetailResponse",
+        "description": "Aggregated session recap for the progression detail view (Step 5E).\n\nMetrics use existing data only. When a metric cannot be derived honestly it is\n``null`` rather than a guessed value. Clips are ordered newest-first."
+      },
+      "SessionRecapPayload": {
+        "properties": {
+          "recap_available": {
+            "type": "boolean",
+            "title": "Recap Available"
+          },
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "session_attempt_count": {
+            "type": "integer",
+            "title": "Session Attempt Count"
+          },
+          "trick_count": {
+            "type": "integer",
+            "title": "Trick Count"
+          },
+          "trick_breakdown": {
+            "items": {
+              "$ref": "#/components/schemas/SessionRecapTrickBreakdownPayload"
+            },
+            "type": "array",
+            "title": "Trick Breakdown"
+          },
+          "strongest_progress_area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strongest Progress Area"
+          },
+          "repeated_session_issue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repeated Session Issue"
+          },
+          "late_session_dropoff": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Late Session Dropoff"
+          },
+          "best_trick_of_session": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Trick Of Session"
+          },
+          "session_summary": {
+            "type": "string",
+            "title": "Session Summary"
+          },
+          "next_session_focus": {
+            "type": "string",
+            "title": "Next Session Focus"
+          },
+          "recommended_drill": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Drill"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recap_available",
+          "session_id",
+          "session_attempt_count",
+          "trick_count",
+          "session_summary",
+          "next_session_focus"
+        ],
+        "title": "SessionRecapPayload"
+      },
+      "SessionRecapTrickBreakdownPayload": {
+        "properties": {
+          "trick_name": {
+            "type": "string",
+            "title": "Trick Name"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts"
+          },
+          "landed_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landed Count"
+          },
+          "unclear_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unclear Count"
+          },
+          "primary_repeated_issue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Repeated Issue"
+          },
+          "best_cue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Cue"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trick_name",
+          "attempts"
+        ],
+        "title": "SessionRecapTrickBreakdownPayload"
+      },
+      "SessionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "spot_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spot Label"
+          },
+          "focus_trick": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Focus Trick"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "breakthrough_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breakthrough Note"
+          },
+          "clip_count": {
+            "type": "integer",
+            "title": "Clip Count",
+            "default": 0
+          },
+          "attempt_count": {
+            "type": "integer",
+            "title": "Attempt Count",
+            "default": 0
+          },
+          "participants": {
+            "items": {
+              "$ref": "#/components/schemas/SessionParticipantResponse"
+            },
+            "type": "array",
+            "title": "Participants"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "clips": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SessionClipSummary"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clips"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "started_at",
+          "created_at"
+        ],
+        "title": "SessionResponse"
+      },
+      "SessionUpdate": {
+        "properties": {
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "breakthrough_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breakthrough Note"
+          },
+          "spot_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spot Label"
+          },
+          "focus_trick": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Focus Trick"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "SessionUpdate"
+      },
+      "SkateClipReviewBlockPayload": {
+        "properties": {
+          "strengths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Strengths"
+          },
+          "improvement_areas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Improvement Areas"
+          },
+          "actionable_cues": {
+            "items": {
+              "$ref": "#/components/schemas/ActionableCuePayload"
+            },
+            "type": "array",
+            "title": "Actionable Cues"
+          }
+        },
+        "type": "object",
+        "title": "SkateClipReviewBlockPayload"
+      },
+      "SyncRequest": {
+        "properties": {
+          "has_pro": {
+            "type": "boolean",
+            "title": "Has Pro",
+            "description": "RevenueCat SDK's view of the 'pro' entitlement. Informational only \u2014 ignored."
+          },
+          "sync_tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Tier",
+            "description": "Client-reported tier. Informational only \u2014 ignored; the webhook sets tier."
+          },
+          "bonus_purchased": {
+            "type": "integer",
+            "title": "Bonus Purchased",
+            "description": "Client-reported Re-Up bonus count. Informational only \u2014 ignored; the webhook credits Re-Up packs.",
+            "default": 0
+          },
+          "rc_app_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rc App User Id",
+            "description": "RevenueCat app_user_id so the backend can link for future webhooks."
+          }
+        },
+        "type": "object",
+        "required": [
+          "has_pro"
+        ],
+        "title": "SyncRequest",
+        "description": "Client's view of entitlements after purchase or restore.\n\n``has_pro``, ``sync_tier`` and ``bonus_purchased`` are accepted for backward\ncompatibility but are **informational only** \u2014 the server never grants tier or\nbonus from these client claims. The RevenueCat webhook is the source of truth."
+      },
+      "SyncResponse": {
+        "properties": {
+          "tier": {
+            "type": "string",
+            "title": "Tier"
+          },
+          "bonus_analyses": {
+            "type": "integer",
+            "title": "Bonus Analyses"
+          },
+          "monthly_free_remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Free Remaining"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tier",
+          "bonus_analyses",
+          "monthly_free_remaining"
+        ],
+        "title": "SyncResponse"
+      },
+      "TrickClipCompareResponse": {
+        "properties": {
+          "trick_name": {
+            "type": "string",
+            "title": "Trick Name"
+          },
+          "trick_display": {
+            "type": "string",
+            "title": "Trick Display"
+          },
+          "compare_available": {
+            "type": "boolean",
+            "title": "Compare Available"
+          },
+          "days_between": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Between"
+          },
+          "pte_delta": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pte Delta"
+          },
+          "oldest_landed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oldest Landed"
+          },
+          "newest_landed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Newest Landed"
+          },
+          "oldest_clip": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrickCompareClip"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "newest_clip": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrickCompareClip"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "progress_notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Progress Notes"
+          },
+          "clips_count": {
+            "type": "integer",
+            "title": "Clips Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "trick_name",
+          "trick_display",
+          "compare_available"
+        ],
+        "title": "TrickClipCompareResponse"
+      },
+      "TrickCompareClip": {
+        "properties": {
+          "clip_id": {
+            "type": "string",
+            "title": "Clip Id"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
+          "video_playback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Playback Url"
+          },
+          "pte_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pte Score"
+          },
+          "landed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landed"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "clip_id",
+          "created_at"
+        ],
+        "title": "TrickCompareClip"
+      },
+      "TrickListResponse": {
+        "properties": {
+          "tricks": {
+            "items": {
+              "$ref": "#/components/schemas/TrickOut"
+            },
+            "type": "array",
+            "title": "Tricks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tricks"
+        ],
+        "title": "TrickListResponse"
+      },
+      "TrickOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Stable trick_id: lowercase canonical name."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Aliases"
+          },
+          "difficulty_tier": {
+            "type": "integer",
+            "title": "Difficulty Tier"
+          },
+          "rotation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rotation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "difficulty_tier"
+        ],
+        "title": "TrickOut"
+      },
+      "UpdateLineRequest": {
+        "properties": {
+          "line_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line Name"
+          },
+          "trick_sequence": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 4,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trick Sequence"
+          }
+        },
+        "type": "object",
+        "title": "UpdateLineRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

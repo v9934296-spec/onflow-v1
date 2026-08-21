@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "OnFlow",
+    "slug": "onflow-lite",
+    "version": "1.0.0",
+    "scheme": "onflowlite",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#080808",
+    "icon": "./assets/icon.png",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.onflow.lite",
+      "buildNumber": "1",
+      "usesAppleSignIn": true,
+      "deploymentTarget": "15.1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "OnFlow uses the camera to film your skate attempts.",
+        "NSMicrophoneUsageDescription": "OnFlow records audio with your skate clips.",
+        "NSPhotoLibraryUsageDescription": "OnFlow lets you pick skate clips from your library.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-asset",
+      "expo-secure-store",
+      "expo-apple-authentication",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "OnFlow uses the camera to film your skate attempts.",
+          "microphonePermission": "OnFlow records audio with your skate clips.",
+          "recordAudioAndroid": true
+        }
+      ],
+      "expo-video",
+      "expo-sqlite",
+      "expo-font",
+      "expo-image-picker"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3c8b5334-82f7-4286-ab87-2eb940a9037b"
+      }
+    }
+  }
+}
