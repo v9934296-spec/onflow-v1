@@ -12,14 +12,14 @@ function adapter() {
     try {
       // Native only. Tests stay on the in-memory map.
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { createMMKV } = require("react-native-mmkv") as {
-        createMMKV: () => {
+      const { MMKV } = require("react-native-mmkv") as {
+        MMKV: new () => {
           getString: (k: string) => string | undefined;
           set: (k: string, v: string) => void;
           delete: (k: string) => void;
         };
       };
-      native = createMMKV();
+      native = new MMKV();
     } catch {
       native = null;
     }
