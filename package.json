@@ -16,6 +16,7 @@
     "api:check": "node scripts/generate-openapi-types.mjs --check",
     "verify:phase0": "npm run typecheck && npm run lint && npm run verify:boundaries && npm run api:check && npm run test",
     "bundle:ios": "expo export --platform ios --output-dir dist-ios",
+    "download:ios": "node scripts/download-eas-ios.mjs",
     "build:preview:ios": "eas build --profile preview --platform ios",
     "build:production:ios": "eas build --profile production --platform ios",
     "submit:ios": "eas submit --profile production --platform ios --latest"
@@ -43,6 +44,7 @@
     "react": "19.0.0",
     "react-native": "0.79.6",
     "react-native-mmkv": "^4.3.2",
+    "react-native-nitro-modules": "^0.37.0",
     "react-native-purchases": "^10.4.4",
     "react-native-purchases-ui": "^10.4.4",
     "react-native-safe-area-context": "5.4.0",
