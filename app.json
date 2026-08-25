@@ -14,7 +14,6 @@
       "bundleIdentifier": "com.onflow.lite",
       "buildNumber": "1",
       "usesAppleSignIn": true,
-      "deploymentTarget": "15.1",
       "infoPlist": {
         "NSCameraUsageDescription": "OnFlow uses the camera to film your skate attempts.",
         "NSMicrophoneUsageDescription": "OnFlow records audio with your skate clips.",
