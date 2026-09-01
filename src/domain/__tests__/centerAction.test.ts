@@ -2,6 +2,28 @@ import { describe, expect, it } from "vitest";
 import { resolveCenterAction } from "../centerAction";
 
 describe("center action", () => {
+  it("disables the center action while session state is hydrating", () => {
+    expect(
+      resolveCenterAction({
+        hydrating: true,
+        hasSession: true,
+        hasTrick: true,
+        hasRecoverableDraft: true,
+      }),
+    ).toBe("HYDRATING");
+  });
+
+  it("resumes a recoverable outbox draft before normal session actions", () => {
+    expect(
+      resolveCenterAction({
+        hydrating: false,
+        hasSession: true,
+        hasTrick: true,
+        hasRecoverableDraft: true,
+      }),
+    ).toBe("RESUME");
+  });
+
   it("starts a free-skate session when none is active", () => {
     expect(
       resolveCenterAction({
@@ -33,16 +55,5 @@ describe("center action", () => {
         hasRecoverableDraft: false,
       }),
     ).toBe("FILM");
-  });
-
-  it("resumes a recoverable outbox draft", () => {
-    expect(
-      resolveCenterAction({
-        hydrating: false,
-        hasSession: true,
-        hasTrick: true,
-        hasRecoverableDraft: true,
-      }),
-    ).toBe("RESUME");
   });
 });
