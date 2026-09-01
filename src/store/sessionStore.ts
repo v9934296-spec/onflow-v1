@@ -21,8 +21,13 @@ export const useSessionStore = create<SessionSlice>((set) => ({
   pendingEnd: null,
   setHydrating: (hydrating) => set({ hydrating }),
   setSession: (session) => {
-    if (session) kv.set(kvKeys.activeSessionId, session.id);
-    else kv.delete(kvKeys.activeSessionId);
+    if (session) {
+      kv.set(kvKeys.activeSessionId, session.id);
+      kv.set(kvKeys.activeSession, JSON.stringify(session));
+    } else {
+      kv.delete(kvKeys.activeSessionId);
+      kv.delete(kvKeys.activeSession);
+    }
     set({ session });
   },
   setTrick: (trick) => {
@@ -41,6 +46,15 @@ export const useSessionStore = create<SessionSlice>((set) => ({
         kv.delete(kvKeys.selectedTrick);
       }
     }
-    set({ trick, hydrating: false });
+    const sessionRaw = kv.get(kvKeys.activeSession);
+    let session: SkateSession | null = null;
+    if (sessionRaw) {
+      try {
+        session = JSON.parse(sessionRaw) as SkateSession;
+      } catch {
+        kv.delete(kvKeys.activeSession);
+      }
+    }
+    set({ trick, session, hydrating: false });
   },
 }));

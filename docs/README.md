@@ -9,14 +9,15 @@ File paths in OF-001–OF-005 that point at `services/api` refer to the Onflow D
 | [of-003-attempt-sync-immutability.md](./of-003-attempt-sync-immutability.md) | OF-003 **closed** (working-tree verification): attempt-sync immutability (spec BE-001). Railway parity unverified. |
 | [of-004-quota-reservation.md](./of-004-quota-reservation.md) | OF-004 **closed** (working-tree verification): quota reserve/finalize/release (spec BE-002). Stale 429 fixture corrected; no production quota change. Railway parity unverified. |
 | [of-005-session-lifecycle.md](./of-005-session-lifecycle.md) | OF-005 **closed** (working-tree verification): ended-session uploads + session-end conflict (spec BE-004 / BE-003). Production remediation for concurrent `ended_at` and `clips.captured_at`. Railway parity unverified. |
-| [of-006-compression-contract.md](./of-006-compression-contract.md) | OF-006 **open / device-blocked** (EXP-001). Steps 1–2 done. No encoder until PUT-file matrix. Phase 0 not complete. |
-| [of-007-doc-001.md](./of-007-doc-001.md) | OF-007 **open / blocked on OF-006** (DOC-001). Remaining UNVERIFIED values + §18.3 design conflicts. |
-| [exp-001-compression.md](./exp-001-compression.md) | Launch-client EXP-001 device table (empty until physical iPhone). |
+| [of-006-compression-contract.md](./of-006-compression-contract.md) | OF-006 **closed by owner** (EXP-001). Steps 1–2 only. No PUT-file matrix, no encoder. §18 item 7 unmeasured. |
+| [of-007-doc-001.md](./of-007-doc-001.md) | OF-007 **superseded.** DOC-001 closeout is the Phase 0 gate audit, not a new ticket. |
+| [phase-0-gate-audit.md](./phase-0-gate-audit.md) | Phase 0 final gate audit. Spec **Approved** 2026-09-01 (item 7 accepted unmeasured). |
+| [exp-001-compression.md](./exp-001-compression.md) | Launch-client EXP-001 device table (empty; 6 Mbps still a candidate). |
 | [launch-qa-checklist.md](./launch-qa-checklist.md) | Physical-device TestFlight GO / NO-GO matrix. |
 
 ## Phase 0 ledger
 
-Contract verification against the V1 build spec. **Not complete** while OF-006 / §18 gate item 7 is open. Do not start launch-client feature implementation.
+Contract verification against the V1 build spec. **Phase 0 closed by owner 2026-09-01.** Spec is **Approved.** Item 7 / Q&A 11 remain measurement debt. See [phase-0-gate-audit.md](./phase-0-gate-audit.md).
 
 | Ticket | Contract | Status |
 |--------|----------|--------|
@@ -25,7 +26,7 @@ Contract verification against the V1 build spec. **Not complete** while OF-006 /
 | OF-003 | BE-001 attempt immutability | **Closed** (working tree; Railway unverified) |
 | OF-004 | BE-002 quota reservation/finalization | **Closed** (working tree; Railway unverified) |
 | OF-005 | BE-003 + BE-004 session lifecycle | **Closed** — production remediation (Railway unverified; `clips.captured_at` migration must deploy with app code) |
-| OF-006 | EXP-001 compression | **OPEN — physical-device blocked** |
-| OF-007 | DOC-001 remaining UNVERIFIED / §18.3 | **OPEN — blocked on OF-006** |
+| OF-006 | EXP-001 compression | **Closed by owner** (no PUT-file matrix; no encoder; Q&A 11 OPEN) |
+| OF-007 | DOC-001 remaining UNVERIFIED / §18.3 | **Superseded** by the Phase 0 gate audit |
 
-Resume OF-006 only with the five PUT-file artifacts → probe → matrix → Step 4 remediation. Do not add an encoder or invent work while waiting.
+Phase 1 may start. Do not treat 6 Mbps as measured. Q&A 11 stays OPEN as measurement debt.

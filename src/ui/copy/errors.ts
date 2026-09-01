@@ -6,27 +6,14 @@
  * string off the wire. Every entry carries at least one recovery action.
  */
 
-export type ErrorKind =
-  | "offline"
-  | "rate_limited"
-  | "quota_exhausted"
-  | "tier_gate"
-  | "auth_expired"
-  | "upload_failed_retryable"
-  | "upload_failed_permanent"
-  | "clip_too_long"
-  | "clip_too_large"
-  | "clip_unsupported_type"
-  | "clip_unreadable"
-  | "analysis_failed"
-  | "contract_error"
-  | "session_missing"
-  | "session_already_ended"
-  | "capture_after_session_end"
-  | "attempt_conflict"
-  | "store_unavailable"
-  | "entitlement_syncing"
-  | "unknown";
+import { isCatalogErrorKind, type CatalogErrorKind } from "../../domain/outbox";
+
+export type ErrorKind = CatalogErrorKind;
+
+export function asErrorKind(raw: string | null | undefined): ErrorKind {
+  if (raw && isCatalogErrorKind(raw)) return raw;
+  return "unknown";
+}
 
 export interface ErrorCopy {
   readonly title: string;
@@ -130,6 +117,11 @@ export const errorCopy: Record<ErrorKind, ErrorCopy> = {
     title: "Confirming your plan",
     body: "Your purchase went through and we're syncing it now. This usually takes a moment.",
     primaryAction: "Retry sync",
+  },
+  low_storage: {
+    title: "Not enough storage",
+    body: "Your phone is low on space, so OnFlow won't film until there's room for a 30-second clip.",
+    primaryAction: "Got it",
   },
   unknown: {
     title: "Something went wrong",

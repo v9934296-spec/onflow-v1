@@ -1,61 +1,141 @@
-import { useRef, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Text, View } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
+import * as Haptics from "expo-haptics";
+import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
-import { color, media, space, textStyle, touchTarget } from "@/ui/tokens";
+import { color, space, textStyle } from "@/ui/tokens";
 import { Button } from "@/ui/components/Button";
+import { RecordControl } from "@/ui/components/RecordControl";
 import { ErrorPanel } from "@/ui/components/States";
+import { Toast } from "@/ui/components/Toast";
 import { useSessionStore } from "@/store/sessionStore";
 import { enqueueClip } from "@/store/enqueueClip";
 import { compressionContract } from "@/domain/compression";
+import { mimeFromUri } from "@/domain/tricks";
+import type { ErrorKind } from "@/ui/copy/errors";
+
+const LOW_STORAGE_BYTES = 200 * 1024 * 1024;
 
 export default function CaptureScreen() {
   const router = useRouter();
   const trick = useSessionStore((s) => s.trick);
   const camera = useRef<CameraView>(null);
+  const startedAt = useRef<number | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [recording, setRecording] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [error, setError] = useState<ErrorKind | null>(null);
+  const [lowStorage, setLowStorage] = useState(false);
+  const [largeFile, setLargeFile] = useState(false);
 
-  async function finish(uri: string, durationSeconds: number, mediaKind: "recorded" | "imported", sizeBytes = 1) {
+  useEffect(() => {
+    void FileSystem.getFreeDiskStorageAsync()
+      .then((free) => setLowStorage(free < LOW_STORAGE_BYTES))
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (!recording) return;
+    const timer = setInterval(() => {
+      if (startedAt.current == null) return;
+      setElapsed(Math.min(compressionContract.maxDurationSeconds, (Date.now() - startedAt.current) / 1000));
+    }, 200);
+    return () => clearInterval(timer);
+  }, [recording]);
+
+  async function finish(uri: string, durationSeconds: number, mediaKind: "recorded" | "imported") {
+    const info = await FileSystem.getInfoAsync(uri);
+    const sizeBytes = info.exists && "size" in info && typeof info.size === "number" ? info.size : 1;
+    if (sizeBytes > compressionContract.maxBytes * 0.8) setLargeFile(true);
+    if (sizeBytes > compressionContract.maxBytes) {
+      setError("clip_too_large");
+      return;
+    }
+    if (durationSeconds > compressionContract.maxDurationSeconds) {
+      setError("clip_too_long");
+      return;
+    }
     const localId = await enqueueClip({
       uri,
       durationSeconds,
       sizeBytes,
-      mimeType: "video/mp4",
+      mimeType: mimeFromUri(uri),
       mediaKind,
       capturedAt: new Date().toISOString(),
     });
     if (localId) router.replace(`/analyzing?localId=${localId}`);
+    else setError("clip_too_long");
+  }
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, backgroundColor: color.bg, justifyContent: "center" }}>
+        <ErrorPanel kind={error} onPrimary={() => setError(null)} />
+        <Button label="Close" variant="secondary" onPress={() => router.back()} />
+      </View>
+    );
   }
 
   if (!permission) return <View style={{ flex: 1, backgroundColor: color.bg }} />;
+
   if (!permission.granted) {
+    const permanent = !permission.canAskAgain;
     return (
       <View style={{ flex: 1, backgroundColor: color.bg, padding: space.xl, justifyContent: "center", gap: space.md }}>
-        {permission.canAskAgain ? (
-          <Button label="Allow camera" onPress={() => void requestPermission()} />
+        {permanent ? (
+          <>
+            <ErrorPanel kind="unknown" />
+            <Button label="Open Settings" onPress={() => void Linking.openSettings()} />
+          </>
         ) : (
-          <ErrorPanel kind="unknown" />
+          <Button label="Allow camera" onPress={() => void requestPermission()} />
         )}
         <Button
           label="Pick from library"
           variant="secondary"
-          onPress={() => void pickLibrary(finish)}
+          onPress={() => void pickLibrary(finish, setError)}
+        />
+        <Button label="Close" variant="secondary" onPress={() => router.back()} />
+      </View>
+    );
+  }
+
+  if (lowStorage) {
+    return (
+      <View style={{ flex: 1, backgroundColor: color.bg, justifyContent: "center" }}>
+        <ErrorPanel kind="low_storage" onPrimary={() => setLowStorage(false)} />
+        <Button
+          label="Pick from library"
+          variant="secondary"
+          onPress={() => void pickLibrary(finish, setError)}
         />
       </View>
     );
   }
 
+  const overlayScale = { maxFontSizeMultiplier: 1.3 } as const;
+
   return (
     <View style={{ flex: 1, backgroundColor: color.bg }}>
       <CameraView ref={camera} style={{ flex: 1 }} mode="video" mute={false}>
-        <View style={{ position: "absolute", top: 56, left: space.lg, right: space.lg }}>
-          <Text style={{ ...textStyle.h2, color: color.textPrimary }}>
+        <View style={{ position: "absolute", top: 56, left: space.lg, right: space.lg, gap: space.sm }}>
+          <Text {...overlayScale} style={{ ...textStyle.h2, color: color.textPrimary }}>
             {trick?.canonicalName ?? "No trick"}
           </Text>
-          <Text style={{ ...textStyle.mono, color: color.textPrimary }}>
-            MAX {compressionContract.maxDurationSeconds}S · TAP TO {recording ? "STOP" : "START"}
+          {trick?.stance || trick?.direction ? (
+            <Text {...overlayScale} style={{ ...textStyle.mono, color: color.textPrimary }}>
+              {[trick.stance, trick.direction].filter(Boolean).join(" · ")}
+            </Text>
+          ) : null}
+          <Text
+            accessibilityLabel={`Elapsed ${Math.floor(elapsed)} seconds of ${compressionContract.maxDurationSeconds}`}
+            style={{ ...textStyle.mono, color: color.textPrimary }}
+          >
+            {formatElapsed(elapsed)} / {compressionContract.maxDurationSeconds}S · TAP TO{" "}
+            {recording ? "STOP" : "START"}
           </Text>
         </View>
         <View
@@ -68,38 +148,42 @@ export default function CaptureScreen() {
             gap: space.md,
           }}
         >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={recording ? "Stop recording" : "Start recording"}
+          {largeFile ? (
+            <Toast body="This file is large. Over 100MB it won't upload." />
+          ) : null}
+          <RecordControl
+            recording={recording}
             onPress={() => {
               void (async () => {
                 if (!recording) {
                   setRecording(true);
+                  startedAt.current = Date.now();
+                  setElapsed(0);
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
                   try {
                     const clip = await camera.current?.recordAsync({
                       maxDuration: compressionContract.maxDurationSeconds,
                     });
-                    if (clip?.uri) {
-                      await finish(clip.uri, compressionContract.maxDurationSeconds, "recorded");
-                    }
+                    const seconds = startedAt.current
+                      ? Math.min(
+                          compressionContract.maxDurationSeconds,
+                          Math.max(1, (Date.now() - startedAt.current) / 1000),
+                        )
+                      : compressionContract.maxDurationSeconds;
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+                    if (clip?.uri) await finish(clip.uri, seconds, "recorded");
                   } finally {
+                    startedAt.current = null;
                     setRecording(false);
+                    setElapsed(0);
                   }
                   return;
                 }
                 camera.current?.stopRecording();
               })();
             }}
-            style={{
-              width: touchTarget.captureControl,
-              height: touchTarget.captureControl,
-              borderRadius: 999,
-              backgroundColor: recording ? media.recording : color.neon,
-              borderWidth: 4,
-              borderColor: color.textPrimary,
-            }}
           />
-          <Button label="Library" variant="secondary" onPress={() => void pickLibrary(finish)} />
+          <Button label="Library" variant="secondary" onPress={() => void pickLibrary(finish, setError)} />
           <Button label="Close" variant="secondary" onPress={() => router.back()} />
         </View>
       </CameraView>
@@ -107,18 +191,24 @@ export default function CaptureScreen() {
   );
 }
 
+function formatElapsed(seconds: number): string {
+  const whole = Math.floor(seconds);
+  const mm = String(Math.floor(whole / 60)).padStart(2, "0");
+  const ss = String(whole % 60).padStart(2, "0");
+  return `${mm}:${ss}`;
+}
+
 async function pickLibrary(
-  finish: (uri: string, durationSeconds: number, kind: "recorded" | "imported", size?: number) => Promise<void>,
+  finish: (uri: string, durationSeconds: number, kind: "recorded" | "imported") => Promise<void>,
+  setError: (kind: ErrorKind) => void,
 ) {
   const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"] });
   if (picked.canceled || !picked.assets[0]) return;
   const asset = picked.assets[0];
   const duration = Math.max(1, (asset.duration ?? 1000) / 1000);
-  if (duration > compressionContract.maxDurationSeconds) return;
-  await finish(
-    asset.uri,
-    duration,
-    "imported",
-    asset.fileSize ?? 1,
-  );
+  if (duration > compressionContract.maxDurationSeconds) {
+    setError("clip_too_long");
+    return;
+  }
+  await finish(asset.uri, duration, "imported");
 }

@@ -1,17 +1,17 @@
 # OF-006 — Compression contract verification (EXP-001)
 
+**Status:** Closed by owner instruction (2026-09-01). Not closed by PUT-file evidence.  
 **Phase:** 0 contract verification  
 **Spec names:** EXP-001 · §7.5 · §8.2 · §11.2 · §16.3 EXP-001 · §16 order of work item 4 · §18 gate item 7 · Q&A 11  
 **Not:** quota, session-end, intelligence, attempt-sync, Capture chrome, R2 credentials, rewriting a compressor because APIs “look suspicious”
 
-Status: **Open / device-blocked.** Steps 1–2 are done. Stop here until the launch iPhone exists.
+Vincent closed this ticket without a filled device matrix, encoder, or locked bitrate. Steps 1–2 stand. Steps 3–4 were not performed.
 
-Do **not** add an encoder, pick a bitrate, resolve the compression-failure “ceilings” ambiguity, or normalize initiate 100 MB vs complete 200 MiB while waiting.
+The static finding still stands: the launch client **does not satisfy §7.5** because there is no compress-before-initiate derivative. 6 Mbps in `src/domain/compression.ts` remains a candidate. Native camera output is **not** treated as measured.
 
-The static finding already stands: the launch client **does not satisfy §7.5** because there is no compress-before-initiate derivative. The device matrix does not reopen that decision. It answers what iOS actually writes so Step 4 can choose the **smallest** correct export.
+**§18 gate item 7 is not satisfied by measurement.** Q&A 11 remains OPEN. Do not mark the spec Approved. Do not add an encoder from this closeout.
 
-**Phase 0 is not complete.** §18 gate item 7 remains open. Do not mark the spec Approved.
-**Spec authority on pass-through:** §7.5 says **“Compress before `initiate-upload`.”** Temp storage describes an app-private **derivative** deleted after successful complete. Failure fallback uploads the **original** only if compression **fails** and that original already meets the ceilings. That is not “compress only as needed.” Native camera output happening to look like H.264/1080 is **not** a substitute for the export stage, and it is **not** a reason to leave compression unimplemented. Device measurement still decides *what the encoder must emit* (bitrate, whether 4K is downscaled in practice, etc.). It does not waive the missing stage.
+**Spec authority on pass-through:** §7.5 says **“Compress before `initiate-upload`.”** Temp storage describes an app-private **derivative** deleted after successful complete. Failure fallback uploads the **original** only if compression **fails** and that original already meets the ceilings. That is not “compress only as needed.” Native camera output happening to look like H.264/1080 is **not** a substitute for the export stage.
 ---
 
 ## Why this is OF-006
@@ -21,7 +21,7 @@ The static finding already stands: the launch client **does not satisfy §7.5** 
 | OF-005 | Session-end + ended-session uploads — **closed** (production) |
 | **OF-006** | **Client media contract measured on a physical iPhone** |
 
-§16 order of work item 4: measure compression physically. §18 gate item 7: compression contract measured and filled. Q&A 11 remains OPEN until that measurement exists.
+§16 order of work item 4 and §18 gate item 7 asked for a physical measurement. That measurement was not recorded. Q&A 11 remains OPEN.
 
 ---
 
@@ -95,9 +95,9 @@ Optional extra: if rows 1–2 are ≪100 MB, you do not need ten copies to “co
 
 1. **Static map** — done (this document)  
 2. **Spec comparison** — done (Step 2 table)  
-3. **Five-row device matrix** — **blocked** on launch iPhone; probe the file `runOutboxRow` would PUT  
-4. **Minimum remediation** — only after the matrix: one preset vs special 4K/60, measured bitrate, one-recompress path  
-5. Closeout — then DOC-001. Phase 0 stays incomplete until OF-006 closes.
+3. **Five-row device matrix** — **waived** (empty; no PUT files in this repo)  
+4. **Minimum remediation** — **not implemented**  
+5. Closeout — owner closed the ticket. DOC-001 (OF-007) is unblocked for remaining UNVERIFIED / §18.3. Q&A 11 stays OPEN. Phase 0 stays incomplete.
 
 **Pinned, out of OF-006 media work:** initiate **100 MB** vs complete default **200 MiB**. Do not casually set them equal while adding export. Either a later spec pin (both 100 MB) or a separate, narrowly scoped correction.---
 
@@ -218,9 +218,11 @@ Then **Step 4**: smallest remediation from that evidence + §7.5 (one export pre
 
 ---
 
-## Step 3 — Device matrix (blocked)
+## Step 3 — Device matrix (waived)
 
-Empty until those PUT files exist. This environment cannot film or `ffprobe` them.---
+Empty. Owner closed OF-006 without PUT-file rows. This environment never filmed or `ffprobe`d them.
+
+---
 
 ## Out of scope
 
@@ -230,14 +232,21 @@ Reopening OF-002–005; OF-005 migration deploy; Gemini/quota; inventing 6 Mbps 
 
 ## Definition of done
 
-- Steps 1–2 frozen as written  
+Original bar (not met):
+
 - Five-row device matrix filled from the **PUT file** (plus import original unchanged)  
 - Step 4 minimum export implemented only from that evidence + §7.5  
-- `targetBitrateBps` locked or still candidate from measured bytes — not from 6×30s arithmetic  
-- **100 MB initiate vs 200 MiB complete still unresolved here** (or closed by a separate ticket)  
+- `targetBitrateBps` locked from measured bytes
+
+Recorded closeout (2026-09-01):
+
+- Steps 1–2 frozen as written  
+- Ticket closed by owner instruction; matrix empty; no encoder  
+- `targetBitrateBps` remains candidate `6_000_000`  
+- **100 MB initiate vs 200 MiB complete still unresolved here**  
 - Lite vs launch named; Railway unverified; OF-005 migration still a deploy pair  
-- **Phase 0 not complete** until this ticket closes (§18 item 7)---
+- **§18 item 7 remains unmeasured.** Phase 0 is not complete. Spec stays Draft.
 
 ## What comes after
 
-**DOC-001** (remaining UNVERIFIED / §18.3). Then Phase 1.
+**DOC-001 / OF-007** (remaining UNVERIFIED / §18.3). Q&A 11 is still OPEN and is not a reason to invent a bitrate. Then Phase 1 only after the §18 gate list is actually green.

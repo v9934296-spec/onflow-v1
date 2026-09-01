@@ -2,7 +2,7 @@
 
 **Product:** OnFlow
 **Scope:** Launch release
-**Status:** Draft — contract partially verified. Ready for Phase 0. **Not approved for feature implementation** until the §18 gate items are closed.
+**Status:** **Approved** 2026-09-01 by owner (Vincent). Phase 1 feature implementation may start. §18 gate item 7 is **accepted unmeasured** — 6 Mbps remains a candidate, not a locked launch number. Q&A 11 stays OPEN as a measurement debt, not a Phase 0 blocker.
 **Owner:** Vincent (Toner)
 **Reference client:** `onflow-lite` (Expo 53 / RN 0.79.6 / React 19 / expo-router 5)
 **Backend:** `services/api` (FastAPI), unchanged except §9
@@ -180,13 +180,13 @@ Camera fills the frame. Overlay: selected trick on scrim, elapsed time, max dura
 
 ### 7.5 Upload
 
-**Compression contract** — resolved before Capture implementation, all values `UNVERIFIED` until device-tested:
+**Compression contract** — required before Capture is done. **Not device-measured.** OF-006 was owner-closed 2026-09-01 without PUT-file evidence. These are launch *targets*, not locked numbers. Q&A 11 remains OPEN. There is still no compress-before-initiate stage in the client:
 
 | Parameter | Launch value |
 |---|---|
 | Container / codec | MP4 / H.264 (`video/mp4`) |
 | Resolution ceiling | 1080p long edge; never upscale |
-| Bitrate target | Candidate 6 Mbps pending EXP-001 device measurement; see `docs/exp-001-compression.md` |
+| Bitrate target | Candidate 6 Mbps. OF-006 closed 2026-09-01 without device measurement; see `docs/exp-001-compression.md` |
 | Frame rate | Preserve source up to 60fps; never interpolate |
 | Orientation | Rotation metadata preserved; never re-encode into a wrong orientation |
 | Audio | Preserved — the engine may use it; confirm in Phase 0 |
@@ -253,7 +253,8 @@ Verified by reading `services/api` and `onflow-lite` at the time of writing. Any
 | DELETE | `/api/v1/account` |
 | POST | `/api/v1/sessions` |
 | GET/PATCH/DELETE | `/api/v1/sessions/{session_id}` |
-| GET | `/api/v1/sessions/{session_id}/recap` · `/api/v1/me/sessions` |
+| GET | `/api/v1/sessions/{session_id}/recap` · `/api/v1/sessions/{session_id}/attempts` · `/api/v1/me/sessions` |
+| GET | `/api/v1/tricks` |
 | POST | `/api/v1/clips/initiate-upload` |
 | POST | `/api/v1/clips/{clip_id}/complete-upload` |
 | GET | `/api/v1/clips/jobs` · `/api/v1/clips/jobs/{job_id}` |
@@ -349,8 +350,8 @@ Other verified `complete-upload` failures: `404` object missing at storage key �
 | `land_score` | float | 0.0–10.0 |
 | `NormalizedReviewPayload.score` | int | 0–10 |
 | `MechanicsDimensionPayload.score` | float | 0.0–10.0 |
-| `pte_rating` / `pte_score` | int | `UNVERIFIED` bound |
-| `best_pte_score`, `average_pte_score` | float | `UNVERIFIED` bound |
+| `pte_rating` / `pte_score` | int \| null | **Closed for launch (2026-09-01).** OpenAPI: integer, no min/max. Out of launch scope. Do not display. |
+| `best_pte_score`, `average_pte_score` | number \| null | **Closed for launch (2026-09-01).** OpenAPI: number, no min/max. Out of launch scope. Do not display. |
 
 `null` already means abstention in every case. **The scale is 0–10, not 0–100.** Display precision is **whole numbers 0–10** (DOC-001). `land_score` floats are rounded to nearest int at the mapper. Values outside 0–10 are rejected, never clamped. `insufficient` never shows a score. `limited` may show a score only when the payload has one.
 
@@ -541,11 +542,11 @@ Scale 0–10 (§8.4). `null` means abstention and renders as absence.
 - Provider and model metadata are stored and retained on every result.
 - Gemini and Pegasus scores are never presented on one continuous scale until calibration is proven.
 
-Still open before Phase 3: display rounding, and whether `limited` readiness permits an overall score at all.
+**Closed (DOC-001 / Q&A 5):** whole numbers 0–10. `limited` may show a score only when the payload has one. `insufficient` never does. Mapper: `src/domain/mappers/score.ts`.
 
 ### 11.5 Evidence specification
 
-Pending the §9 change-1 decision. Under option (b): overall sufficiency maps from `review_readiness` (`usable` → sufficient, `limited` → partial, `insufficient` → insufficient); `uncertainty_notes` and `processing_notes` render as an explicit uncertainty block; `quality_signals.video_readable` and `motion_detected` gate whether any read is shown at all; mechanics dimensions render with their server-provided free-text `evidence` string and never with a client-assigned tag.
+**Closed — option (b).** Overall sufficiency maps from `review_readiness` (`usable` → sufficient, `limited` → partial, `insufficient` → insufficient); `uncertainty_notes` and `processing_notes` render as an explicit uncertainty block; `quality_signals.video_readable` and `motion_detected` gate whether any read is shown at all; mechanics dimensions render with their server-provided free-text `evidence` string and never with a client-assigned tag.
 
 Under option (a), the states, required fields per state, prohibited combinations, display labels, colors, and VoiceOver announcements are defined in the change-1 ticket. Unknown states from a future server version render as unavailable, never as detected.
 
@@ -559,7 +560,7 @@ Because `clip_id` is server-generated, the outbox anchors on a client `local_id`
 | Initiate upload | `local_id` → server `clip_id` | Retry before response can create an orphan clip row — **§9 change 4** |
 | PUT to R2 | `storage_key` | Overwrite-safe |
 | Complete upload | `clip_id` | Must be idempotent — §9 change 4 |
-| Attempt report | client `id` | Client ID supported; **an immutable replay contract is blocked by §9 change 11.** Today's endpoint is an upsert that mutates |
+| Attempt report | client `id` | Client ID supported. **OF-003 closed BE-001 at working-tree verification.** Railway / deployed parity unverified. |
 | Session end | `session_id` | §9 change 6 |
 
 A response-replay cache alone is not correctness — a device can be offline longer than any cache TTL. Correctness rests on permanent uniqueness at the resource level; caching only avoids repeat work.
@@ -587,14 +588,9 @@ Retryable and permanent failures are distinct. Permanent failures — unreadable
 
 ### 11.9 Session end — verified server behavior
 
-`PATCH /sessions/{session_id}` accepts `ended_at` with **no conflict handling whatsoever.** `update_session` loads the session, coerces a naive datetime to UTC, and blindly `setattr`s every supplied field. A late offline sync therefore **overwrites** an `ended_at` the server already holds, and can move it forward or backward arbitrarily. The only thing guarded is the recap feed event, which fires once via the `was_ended` flag.
+**Working-tree OF-005 (Railway unverified):** first concurrent end wins; the loser receives the winning `ended_at`. The launch client still does not trust the server to arbitrate: `endSession` sends `ended_at` only when the fetched row has none.
 
-Two consequences, both corrections to earlier drafts of this document:
-
-1. **The client wins, not the server.** A stale queued `pending_end` from a phone that was offline for two days will silently rewrite a session that was already closed correctly on another device.
-2. Delayed session completion is *technically supported today* — §9 change 6 is therefore not "does this work," it is **"add conflict handling."**
-
-**Launch client rule until change 6 lands:** send `ended_at` only when the server row has no `ended_at`. If the server already shows the session ended, discard the local value, keep the server's, and tell the user once. The client must not rely on the server to arbitrate, because it does not.
+Historical note from the spec’s original read of `update_session` (pre-OF-005): `PATCH` accepted `ended_at` with no conflict handling and overwrote blindly. **Launch client rule:** if the server already shows the session ended, discard the local value, keep the server’s, and tell the user once.
 
 **Session recovery.** If the original session no longer exists server-side, the clip is never silently re-homed. The user chooses: attach to the current session, recover a session using the original local start time, or keep it unassigned. Original times and spot metadata are retained in all three paths.
 
@@ -745,17 +741,17 @@ Dependency-ordered, because several of these gate each other:
 
 **This document moves from Draft to Approved only when all of the following are closed:**
 
-1. Rate-limit contract corrected in the client (generic 429 + `Retry-After`, no prose parsing) — §8.2 ✅ documented
-2. Attempt-ID mutation resolved — §9 change 11
-3. Failed-analysis quota release decided and ticketed — §9 change 12
-4. Uploads into ended sessions restricted — §9 change 13
-5. Launch evidence behavior specified with no per-component inference — §9 option (b) rules ✅ documented
-6. Cross-provider score comparison prohibited — §11.4 ✅ documented
-7. Compression contract measured and filled — §7.5
-8. `complete-upload` idempotency limits documented and the client reconciliation path built — §8.3 ✅ documented
-9. Every remaining `UNVERIFIED` value closed
+1. Rate-limit contract corrected in the client (generic 429 + `Retry-After`, no prose parsing) — §8.2 ✅ `src/api/client.ts`
+2. Attempt-ID mutation resolved — §9 change 11 ✅ OF-003 working tree; Railway unverified
+3. Failed-analysis quota release decided and ticketed — §9 change 12 ✅ OF-004 working tree; Railway unverified
+4. Uploads into ended sessions restricted — §9 change 13 ✅ OF-005 working tree; Railway unverified
+5. Launch evidence behavior specified with no per-component inference — §9 option (b) rules ✅ `ReadinessBanner`; no `EvidenceTag`
+6. Cross-provider score comparison prohibited — §11.4 ✅ documented and stored as `providerModel`
+7. Compression contract measured and filled — §7.5 — **accepted unmeasured** (owner 2026-09-01). OF-006 closed without PUT files. Q&A 11 remains OPEN as measurement debt; 6 Mbps is still a candidate.
+8. `complete-upload` idempotency limits documented and the client reconciliation path built — §8.3 ✅ `runOutboxRow` 409 → analyzing / poll
+9. Every remaining `UNVERIFIED` value closed — ✅ 2026-09-01 audit (`docs/phase-0-gate-audit.md`). Compression stays item 7. Q&A 1 deferred under §11.4.
 
-**Gate into Phase 1:** the nine items above · §9 tickets written · font selected and verified on device.
+**Gate into Phase 1:** **open.** Owner approved 2026-09-01 with item 7 accepted unmeasured and font-on-device accepted as code-only (Bebas Neue + Sora + JetBrains Mono loaded in `app/_layout.tsx`). Railway parity for BE-001–004 remains unverified and is not a Phase 1 start blocker.
 
 **Later gates:** Result cannot start until its §9 dependencies are on staging · History cannot start until attempt/clip/session relationships are verified against the real API · beta cannot start until a production-compatible backend is deployed and pinned against a minimum client version.
 
@@ -776,9 +772,9 @@ Six are closed by the code. Three are decisions made here. Three cannot be answe
 | # | Question | Answer | Evidence |
 |---|---|---|---|
 | 6 | Is `complete-upload` idempotent? | **No, but it is retry-tolerant.** Full state matrix in §8.3. `job_id == clip_id`, so a `409` is reconciled by polling the job. No backend change needed to ship | `services/clip_v1_pipeline.py` |
-| 7 | Does `PATCH /sessions/{id}` accept a late `ended_at`? | **Yes, and with no conflict handling at all** — it overwrites unconditionally. Client wins, not server. See §11.9; this reverses an earlier statement in this document | `routers/sessions.py` |
+| 7 | Does `PATCH /sessions/{id}` accept a late `ended_at`? | **Working-tree OF-005:** first-end wins; loser receives the winner. Railway / deployed parity unverified. Launch client still does not rely on the server: `endSession` PATCHes only when the server row has no `ended_at` | OF-005; `src/api/endpoints.ts` `endSession` |
 | 8 | Pending-clip reaper window | **24 hours**, configurable via `clip_pending_reap_hours`, 200 rows per run, `pending` status only. Analyzing and analyzed clips are untouched | `services/clip_pending_reaper.py` |
-| 9 | Minimum iOS and typeface | **No explicit deployment target is set** — Expo 53 defaults apply (iOS 15.1). Also fixed today: portrait only, `supportsTablet: false`, `newArchEnabled: true`, dark UI, `backgroundColor #1A1A1C`. Fonts: Rubik + JetBrains Mono, both bundled | `app.json`, `package.json` |
+| 9 | Minimum iOS and typeface | **No explicit deployment target is set** — Expo 53 defaults apply (iOS 15.1). Portrait only, `supportsTablet: false`, `newArchEnabled: true`, dark UI, `backgroundColor #080808`. Fonts: **Bebas Neue (display) + Sora (body) + JetBrains Mono (machine-truth)** via `@expo-google-fonts` (OFL). Loaded in `app/_layout.tsx`. Device render still unconfirmed. | `app.json`, `app/_layout.tsx` |
 | 10 | Is Google sign-in a real launch option? | **No. Apple only.** `signInWithGoogle` exists in `src/api/authApi.ts` and the endpoint is live, but there is no Google sign-in SDK in `package.json` and no plugin in `app.json` — the only "google" packages are the two Google Fonts. The client can post an `id_token` it has no way to obtain. Shipping Google means adding an SDK, a plugin, account-linking rules, and a RevenueCat identity story — a feature, not a checkbox | `package.json`, `app.json` |
 | — | Does the engine get audio? | **Yes.** `NSMicrophoneUsageDescription` is declared and Android requests `RECORD_AUDIO`. Compression must preserve audio unless the engine is confirmed to ignore it | `app.json` |
 
@@ -811,5 +807,5 @@ Amber `#FFB020` fills the palette gap for `limited`.
 |---|---|---|
 | 1 | Are Gemini and Pegasus scores comparable? | An empirical calibration run: the same 30–50 clips through both providers, correlation checked. Until then §11.4 stands — individual scores display, nothing aggregates across providers. This is a half-day experiment, not a decision |
 | 5 | Score display rounding | **Closed DOC-001:** whole numbers 0–10. `limited` may show a score only when present. `insufficient` never does. |
-| 11 | Compression parameters | **OPEN (EXP-001).** Candidate 6 Mbps in `src/domain/compression.ts`. Must be measured on a physical iPhone. |
+| 11 | Compression parameters | **OPEN (measurement debt).** Spec **Approved** 2026-09-01 with this unmeasured. Candidate 6 Mbps in `src/domain/compression.ts` is not a locked launch number. |
 | 12 | Reconciliation window for uploads into an ended session | **Closed BE-004:** 24 hours from `ended_at`. Capture must predate `ended_at`. Codes: `capture_after_session_end`, `session_end_upload_window_expired`. |

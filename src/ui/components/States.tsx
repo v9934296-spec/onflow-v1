@@ -45,6 +45,24 @@ export function OfflineBadge({ queued }: { queued: number }) {
   );
 }
 
+export function QueuedBadge({ count }: { count: number }) {
+  return (
+    <View
+      style={{
+        paddingVertical: space.xs,
+        paddingHorizontal: space.md,
+        borderRadius: 6,
+        backgroundColor: color.surface,
+        borderWidth: 1,
+        borderColor: color.hairlineHi,
+        alignSelf: "flex-start",
+      }}
+    >
+      <Text style={{ ...textStyle.mono, color: color.alum }}>{`QUEUED ${count}`}</Text>
+    </View>
+  );
+}
+
 export function Skeleton({ height = 16 }: { height?: number }) {
   return (
     <View

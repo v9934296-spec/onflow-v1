@@ -45,4 +45,15 @@ describe("center action", () => {
       }),
     ).toBe("RESUME");
   });
+
+  it("stays hydrating even when a draft exists", () => {
+    expect(
+      resolveCenterAction({
+        hydrating: true,
+        hasSession: true,
+        hasTrick: true,
+        hasRecoverableDraft: true,
+      }),
+    ).toBe("HYDRATING");
+  });
 });

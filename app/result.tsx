@@ -5,6 +5,8 @@ import { color, space, textStyle } from "@/ui/tokens";
 import { Button } from "@/ui/components/Button";
 import { OutcomeSelector } from "@/ui/components/OutcomeSelector";
 import { ReadinessBanner } from "@/ui/components/ReadinessBanner";
+import { FeedbackRow } from "@/ui/components/FeedbackRow";
+import { ConfirmDialog } from "@/ui/components/Form";
 import { ErrorPanel } from "@/ui/components/States";
 import { pollJob } from "@/store/upload";
 import { queryClient } from "@/store/queryClient";
@@ -66,15 +68,7 @@ export default function ResultScreen() {
         </View>
       ) : null}
       {analysis.mechanics.map((row) => (
-        <View key={row.name} style={{ gap: 4 }}>
-          <Text style={{ ...textStyle.label, color: color.textPrimary }}>{row.name}</Text>
-          {row.assessment ? (
-            <Text style={{ ...textStyle.body, color: color.textSecondary }}>{row.assessment}</Text>
-          ) : null}
-          {row.evidence ? (
-            <Text style={{ ...textStyle.bodySm, color: color.textTertiary }}>{row.evidence}</Text>
-          ) : null}
-        </View>
+        <FeedbackRow key={row.name} row={row} />
       ))}
       {analysis.engineLanded && outcome && (analysis.engineLanded === "yes") !== (outcome === "landed") ? (
         <Text style={{ ...textStyle.bodySm, color: color.alum }}>
@@ -82,22 +76,21 @@ export default function ResultScreen() {
         </Text>
       ) : null}
       <OutcomeSelector value={outcome} onChange={setOutcome} />
-      {confirmLeave ? (
-        <View style={{ gap: space.sm }}>
-          <Text style={{ ...textStyle.body, color: color.textPrimary }}>Save this outcome first?</Text>
-          <Button label="Save and leave" onPress={() => void save(true)} />
-          <Button label="Discard outcome" variant="secondary" onPress={() => router.replace("/")} />
-        </View>
-      ) : (
-        <>
-          <Button label="Save to History" disabled={!outcome} onPress={() => void save(false)} />
-          <Button
-            label="Another clip"
-            variant="secondary"
-            onPress={() => void save(true)}
-          />
-        </>
-      )}
+      <Button label="Save to History" disabled={!outcome} onPress={() => void save(false)} />
+      <Button
+        label="Another clip"
+        variant="secondary"
+        onPress={() => void save(true)}
+      />
+      <ConfirmDialog
+        visible={confirmLeave}
+        title="Save this outcome first?"
+        body="You marked an outcome. Save it to History, or discard just that mark. The clip stays."
+        primaryLabel="Save and leave"
+        secondaryLabel="Discard outcome"
+        onPrimary={() => void save(false)}
+        onSecondary={() => router.replace("/")}
+      />
     </ScrollView>
   );
 

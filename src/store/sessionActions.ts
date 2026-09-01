@@ -4,12 +4,15 @@ import { kv, kvKeys } from "./kv";
 import { mintTrickId } from "../domain/mappers/ids";
 import type { CatalogTrick, SelectedTrick } from "../domain/models";
 
-export function selectCatalogTrick(trick: CatalogTrick): SelectedTrick {
+export function selectCatalogTrick(
+  trick: CatalogTrick,
+  modifiers: { stance: string | null; direction: string | null } = { stance: null, direction: null },
+): SelectedTrick {
   return {
     trickId: mintTrickId(trick.trickId),
     canonicalName: trick.name,
-    stance: null,
-    direction: null,
+    stance: modifiers.stance,
+    direction: modifiers.direction,
   };
 }
 
@@ -23,8 +26,20 @@ export async function restoreActiveSession() {
   const id = kv.get(kvKeys.activeSessionId);
   if (!id) return;
   const res = await fetchSession(id);
-  if (res.ok) useSessionStore.getState().setSession(res.data);
-  else useSessionStore.getState().setSession(null);
+  if (res.ok) {
+    useSessionStore.getState().setSession(res.data);
+    return;
+  }
+  if (
+    res.error.kind === "offline" ||
+    res.error.kind === "server" ||
+    res.error.kind === "cancelled" ||
+    res.error.kind === "configuration" ||
+    res.error.kind === "rate_limited"
+  ) {
+    return;
+  }
+  useSessionStore.getState().setSession(null);
 }
 
 export async function closeSession() {

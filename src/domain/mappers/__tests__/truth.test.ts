@@ -107,4 +107,51 @@ describe("truth rules", () => {
     expect(analysis.clipId).toBe("abc");
     expect(analysis.jobId).toBe("abc");
   });
+
+  it("does not invent client confidence", () => {
+    const analysis = mapClipJob({
+      job_id: "clip-1",
+      status: "completed",
+      result: {
+        review_readiness: "usable",
+        // @ts-expect-error extra wire field must not become a domain claim
+        confidence: 0.91,
+      },
+    });
+    expect(analysis).not.toHaveProperty("confidence");
+    expect("confidence" in analysis).toBe(false);
+  });
+
+  it("treats unknown readiness as absence, not a guessed usable/limited tag", () => {
+    const analysis = mapClipJob({
+      job_id: "clip-1",
+      status: "completed",
+      result: { review_readiness: "pretty_good" },
+    });
+    expect(analysis.readiness).toBeNull();
+    expect(analysis.score).toBeNull();
+  });
+
+  it("keeps the server failure reason and does not invent a recovery story", () => {
+    const analysis = mapClipJob({
+      job_id: "clip-1",
+      status: "failed",
+      failure_reason: "provider_unavailable",
+    });
+    expect(analysis.failureReason).toBe("provider_unavailable");
+    expect(analysis.score).toBeNull();
+    expect(analysis.mechanics).toEqual([]);
+  });
+
+  it("renders missing metrics as empty collections, not zeros", () => {
+    const analysis = mapClipJob({
+      job_id: "clip-1",
+      status: "completed",
+      result: { review_readiness: "usable" },
+    });
+    expect(analysis.uncertaintyNotes).toEqual([]);
+    expect(analysis.processingNotes).toEqual([]);
+    expect(analysis.mechanics).toEqual([]);
+    expect(analysis.score).toBeNull();
+  });
 });

@@ -1,6 +1,6 @@
 # EXP-001 — Compression contract (physical iPhone)
 
-Status: **OPEN**. This gate cannot close in this environment. Capture encoding uses candidate values in `src/domain/compression.ts` and must not be treated as measured.
+Status: **OPEN (unmeasured).** OF-006 was closed by owner instruction on 2026-09-01 without filling this table. Capture encoding still uses candidate values in `src/domain/compression.ts` and must not be treated as measured.
 
 ## Protocol
 
@@ -17,7 +17,7 @@ Status: **OPEN**. This gate cannot close in this environment. Capture encoding u
 - Expected 30s size: ~22.5 MB
 - Fallback: recompress once at 4 Mbps, then reject with `clip_too_large`
 
-Fill this table on device before calling Capture done:
+Table still empty:
 
 | Clip | Seconds | Bytes | Readable | Notes |
 | --- | --- | --- | --- | --- |

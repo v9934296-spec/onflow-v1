@@ -35,6 +35,8 @@ export default tseslint.config(
       "dist-ios/**",
       "src/api/generated/**",
       ".tmp-boundary-check/**",
+      "files/**",
+      "onfkowv1/**",
     ],
   },
 

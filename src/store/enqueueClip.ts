@@ -18,6 +18,7 @@ export async function enqueueClip(input: {
   const userId = useAuthStore.getState().userId;
   if (!userId) return null;
   if (input.durationSeconds > compressionContract.maxDurationSeconds) return null;
+  if (input.sizeBytes > compressionContract.maxBytes) return null;
   const session = useSessionStore.getState().session;
   const localId = newLocalId();
   const row: OutboxRow = {

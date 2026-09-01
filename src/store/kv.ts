@@ -53,6 +53,10 @@ export const kv = {
 
 export const kvKeys = {
   activeSessionId: "onflow.activeSessionId",
+  activeSession: "onflow.activeSession",
   selectedTrick: "onflow.selectedTrick",
   onboardingDone: "onflow.onboardingDone",
+  outbox: "onflow.outbox.v1",
+  trickCatalog: "onflow.trickCatalog",
+  recentTrickIds: "onflow.recentTrickIds",
 } as const;

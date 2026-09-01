@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, AppState, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -15,6 +15,8 @@ import { JetBrainsMono_400Regular } from "@expo-google-fonts/jetbrains-mono";
 import { queryClient } from "@/store/queryClient";
 import { useAuthStore } from "@/store/authStore";
 import { useSessionStore } from "@/store/sessionStore";
+import { initOutbox } from "@/store/outbox";
+import { drainRecoverable } from "@/store/upload";
 import { color } from "@/ui/tokens";
 
 function AuthGate({ children }: { children: ReactNode }) {
@@ -24,9 +26,22 @@ function AuthGate({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    void initOutbox();
     void hydrate();
     useSessionStore.getState().hydrateFromKv();
   }, [hydrate]);
+
+  useEffect(() => {
+    if (phase !== "signed_in") return;
+    const userId = useAuthStore.getState().userId;
+    if (userId) void drainRecoverable(userId);
+    const sub = AppState.addEventListener("change", (next) => {
+      if (next !== "active") return;
+      const id = useAuthStore.getState().userId;
+      if (id) void drainRecoverable(id);
+    });
+    return () => sub.remove();
+  }, [phase]);
 
   useEffect(() => {
     if (phase === "loading") return;
@@ -72,7 +87,7 @@ export default function RootLayout() {
           <Stack.Screen name="capture" options={{ gestureEnabled: false }} />
           <Stack.Screen name="analyzing" options={{ gestureEnabled: false }} />
           <Stack.Screen name="result" />
-          <Stack.Screen name="paywall" />
+          <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
         </Stack>
       </AuthGate>
     </QueryClientProvider>

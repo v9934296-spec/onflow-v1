@@ -26,7 +26,14 @@ export const useAuthStore = create<AuthSlice>((set, get) => ({
     }
     const me = await fetchMe();
     if (!me.ok) {
-      set({ phase: "signed_out", userId: null });
+      if (me.error.kind === "unauthorized") {
+        await clearSession();
+        set({ phase: "signed_out", userId: null });
+        return;
+      }
+      set({ phase: "signed_in", userId: session.userId });
+      const { restoreActiveSession } = await import("./sessionActions");
+      await restoreActiveSession();
       return;
     }
     set({ phase: "signed_in", userId: me.data.user_id });
