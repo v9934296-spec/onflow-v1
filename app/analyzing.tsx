@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { AppState, Text, View } from "react-native";
+import { AppState, Text } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { color, space, textStyle } from "@/ui/tokens";
 import { Button } from "@/ui/components/Button";
 import { StageList } from "@/ui/components/StageList";
 import { UploadProgress } from "@/ui/components/UploadProgress";
 import { ErrorPanel } from "@/ui/components/States";
+import { AsphaltSurface } from "@/ui/components/AsphaltSurface";
+import { ScreenHeader, ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { getOutbox } from "@/store/outbox";
 import { pollJob, runOutboxRow } from "@/store/upload";
 import { queryClient } from "@/store/queryClient";
@@ -149,26 +151,30 @@ export default function AnalyzingScreen() {
 
   if (phase === "FAILED") {
     return (
-      <View style={{ flex: 1, backgroundColor: color.bg, justifyContent: "center" }}>
-        <ErrorPanel kind={failureKind} onPrimary={onFailurePrimary} />
-        <Button label="Home" variant="secondary" onPress={() => router.replace("/")} />
-      </View>
+      <AsphaltSurface>
+        <ScreenSafeArea style={{ justifyContent: "center" }}>
+          <ErrorPanel kind={failureKind} onPrimary={onFailurePrimary} />
+          <Button label="Home" variant="secondary" onPress={() => router.replace("/")} />
+        </ScreenSafeArea>
+      </AsphaltSurface>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.bg, padding: space.xxl, justifyContent: "center", gap: space.lg }}>
-      <Text style={{ ...textStyle.h1, color: color.textPrimary }}>{phase}</Text>
-      <StageList phase={phase} />
-      {phase === "UPLOADING" ? <UploadProgress fraction={fraction} /> : null}
-      {phase !== "UPLOADING" ? (
-        <Text style={{ ...textStyle.body, color: color.textSecondary }}>
-          {slow
-            ? "Still reviewing. You can keep filming — this'll be in your History when it's done."
-            : "Reviewing the clip you called. This is not trick detection."}
-        </Text>
-      ) : null}
-      <Button label="Keep filming" variant="secondary" onPress={() => router.replace("/capture")} />
-    </View>
+    <AsphaltSurface>
+      <ScreenSafeArea style={{ padding: space.xxl, justifyContent: "center", gap: space.lg }}>
+        <ScreenHeader kicker="Queue" title={phase} />
+        <StageList phase={phase} />
+        {phase === "UPLOADING" ? <UploadProgress fraction={fraction} /> : null}
+        {phase !== "UPLOADING" ? (
+          <Text style={{ ...textStyle.body, color: color.textSecondary }}>
+            {slow
+              ? "Still reviewing. You can keep filming — this'll be in your History when it's done."
+              : "Reviewing the clip you called. This is not trick detection."}
+          </Text>
+        ) : null}
+        <Button label="Keep filming" variant="secondary" onPress={() => router.replace("/capture")} />
+      </ScreenSafeArea>
+    </AsphaltSurface>
   );
 }

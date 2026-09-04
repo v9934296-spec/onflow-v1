@@ -1,6 +1,7 @@
-import { Text, View } from "react-native";
+import { Text } from "react-native";
 import { color, space, textStyle } from "@/ui/tokens";
 import { Button } from "@/ui/components/Button";
+import { ScreenHeader, ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { useSessionStore } from "@/store/sessionStore";
 import { closeSession } from "@/store/sessionActions";
 import { useRouter } from "expo-router";
@@ -10,8 +11,8 @@ export default function FlowScreen() {
   const session = useSessionStore((s) => s.session);
   const trick = useSessionStore((s) => s.trick);
   return (
-    <View style={{ flex: 1, backgroundColor: color.bg, padding: space.xl, gap: space.lg }}>
-      <Text style={{ ...textStyle.h1, color: color.textPrimary }}>FLOW</Text>
+    <ScreenSafeArea style={{ padding: space.xl, gap: space.lg }}>
+      <ScreenHeader kicker="Session" title="FLOW" />
       {session ? (
         <>
           <Text style={{ ...textStyle.body, color: color.textSecondary }}>
@@ -25,6 +26,6 @@ export default function FlowScreen() {
           No active session. Use START to begin a free skate.
         </Text>
       )}
-    </View>
+    </ScreenSafeArea>
   );
 }

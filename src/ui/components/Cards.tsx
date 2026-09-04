@@ -19,15 +19,36 @@ export function TrickCard({
       onPress={onPress}
       style={{
         minHeight: touchTarget.minimum,
-        padding: space.lg,
         borderRadius: radius.md,
         borderWidth: 2,
         borderColor: selected ? color.neon : color.hairline,
         backgroundColor: selected ? color.surfaceAlt : color.surface,
+        overflow: "hidden",
+        flexDirection: "row",
+        alignItems: "stretch",
       }}
     >
-      <Text style={{ ...textStyle.bodyLg, color: color.textPrimary }}>{trick.name}</Text>
-      <Text style={{ ...textStyle.mono, color: color.textTertiary }}>{trick.category}</Text>
+      <View style={{ width: 6, backgroundColor: selected ? color.neon : color.hairlineHi }} />
+      <View style={{ flex: 1, padding: space.lg, gap: 2 }}>
+        <Text style={{ ...textStyle.bodyLg, color: color.textPrimary }}>{trick.name}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text style={{ ...textStyle.mono, color: color.textTertiary }}>{trick.category}</Text>
+          <View style={{ flexDirection: "row", gap: 3 }} importantForAccessibility="no-hide-descendants">
+            {Array.from({ length: 5 }, (_, index) => (
+              <View
+                key={index}
+                style={{
+                  width: 4,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor:
+                    index < trick.difficultyTier ? (selected ? color.neon : color.alum) : color.hairlineHi,
+                }}
+              />
+            ))}
+          </View>
+        </View>
+      </View>
     </Pressable>
   );
 }

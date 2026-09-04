@@ -1,6 +1,7 @@
-import { ActivityIndicator, Pressable, Text } from "react-native";
+import { View } from "react-native";
 import { Tabs, useRouter } from "expo-router";
-import { color, textStyle, touchTarget } from "@/ui/tokens";
+import { color, fontFamily, touchTarget } from "@/ui/tokens";
+import { TabGlyph } from "@/ui/components/TabGlyph";
 import { resolveCenterAction } from "@/domain/centerAction";
 import { resumeHref } from "@/domain/outbox";
 import { useSessionStore } from "@/store/sessionStore";
@@ -8,6 +9,7 @@ import { discardRecoverable, listRecoverable } from "@/store/outbox";
 import { useAuthStore } from "@/store/authStore";
 import { startFreeSkateSession } from "@/store/sessionActions";
 import { ConfirmDialog } from "@/ui/components/Form";
+import { CenterActionButton } from "@/ui/components/CenterActionButton";
 import { useCallback, useEffect, useState } from "react";
 import type { LocalId } from "@/domain/types/ids";
 
@@ -48,63 +50,91 @@ export default function TabsLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarStyle: { backgroundColor: color.bg, borderTopColor: color.hairline },
+          tabBarStyle: {
+            backgroundColor: color.bg,
+            borderTopColor: color.hairline,
+            borderTopWidth: 1,
+            paddingTop: 6,
+          },
           tabBarActiveTintColor: color.neon,
           tabBarInactiveTintColor: color.textTertiary,
+          tabBarLabelStyle: {
+            fontFamily: fontFamily.bodySemiBold,
+            fontSize: 10,
+            letterSpacing: 0.6,
+            textTransform: "uppercase",
+          },
+          tabBarItemStyle: {
+            minHeight: touchTarget.minimum,
+          },
         }}
       >
-        <Tabs.Screen name="index" options={{ title: "Home" }} />
-        <Tabs.Screen name="flow" options={{ title: "Flow" }} />
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Home",
+            tabBarAccessibilityLabel: "Home",
+            tabBarIcon: ({ color: tint, focused }) => <TabGlyph name="home" color={tint} focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="flow"
+          options={{
+            title: "Flow",
+            tabBarAccessibilityLabel: "Flow",
+            tabBarIcon: ({ color: tint, focused }) => <TabGlyph name="flow" color={tint} focused={focused} />,
+          }}
+        />
         <Tabs.Screen
           name="center"
           options={{
             title: action === "HYDRATING" ? "…" : action,
+            tabBarLabel: () => null,
             tabBarButton: () => (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={action}
-                disabled={action === "HYDRATING"}
-                onPress={() => {
-                  void (async () => {
-                    if (action === "START") {
-                      const created = await startFreeSkateSession();
-                      if (created.ok) router.push("/trick");
-                      return;
-                    }
-                    if (action === "CHOOSE TRICK") {
-                      router.push("/trick");
-                      return;
-                    }
-                    if (action === "FILM") {
-                      router.push("/capture");
-                      return;
-                    }
-                    if (action === "RESUME") {
-                      setResumeOpen(true);
-                    }
-                  })();
-                }}
-                style={{
-                  minWidth: touchTarget.captureControl,
-                  minHeight: touchTarget.captureControl,
-                  marginTop: -18,
-                  borderRadius: 999,
-                  backgroundColor: color.neon,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {action === "HYDRATING" ? (
-                  <ActivityIndicator color={color.bg} />
-                ) : (
-                  <Text style={{ ...textStyle.label, color: color.bg }}>{action}</Text>
-                )}
-              </Pressable>
+              <View style={{ flex: 1, alignItems: "center", justifyContent: "flex-start" }}>
+                <CenterActionButton
+                  action={action}
+                  onPress={() => {
+                    void (async () => {
+                      if (action === "START") {
+                        const created = await startFreeSkateSession();
+                        if (created.ok) router.push("/trick");
+                        return;
+                      }
+                      if (action === "CHOOSE TRICK") {
+                        router.push("/trick");
+                        return;
+                      }
+                      if (action === "FILM") {
+                        router.push("/capture");
+                        return;
+                      }
+                      if (action === "RESUME") {
+                        setResumeOpen(true);
+                      }
+                    })();
+                  }}
+                />
+              </View>
             ),
           }}
         />
-        <Tabs.Screen name="history" options={{ title: "History" }} />
-        <Tabs.Screen name="profile" options={{ title: "Profile" }} />
+        <Tabs.Screen
+          name="history"
+          options={{
+            title: "History",
+            tabBarAccessibilityLabel: "History",
+            tabBarIcon: ({ color: tint, focused }) => <TabGlyph name="history" color={tint} focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: "Profile",
+            tabBarAccessibilityLabel: "Profile",
+            tabBarIcon: ({ color: tint, focused }) => <TabGlyph name="profile" color={tint} focused={focused} />,
+          }}
+        />
       </Tabs>
       <ConfirmDialog
         visible={resumeOpen}

@@ -8,6 +8,7 @@ import { ReadinessBanner } from "@/ui/components/ReadinessBanner";
 import { FeedbackRow } from "@/ui/components/FeedbackRow";
 import { ConfirmDialog } from "@/ui/components/Form";
 import { ErrorPanel } from "@/ui/components/States";
+import { ScreenHeader, ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { pollJob } from "@/store/upload";
 import { queryClient } from "@/store/queryClient";
 import type { AnalysisResult, AttemptOutcome } from "@/domain/models";
@@ -33,15 +34,19 @@ export default function ResultScreen() {
 
   if (!analysis) {
     return (
-      <View style={{ flex: 1, backgroundColor: color.bg }}>
+      <ScreenSafeArea>
         <ErrorPanel kind="contract_error" onPrimary={() => router.replace("/")} />
-      </View>
+      </ScreenSafeArea>
     );
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: color.bg }} contentContainerStyle={{ padding: space.xl, gap: space.lg }}>
-      <Text style={{ ...textStyle.h1, color: color.textPrimary }}>RESULT</Text>
+    <ScreenSafeArea>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: color.bg }}
+        contentContainerStyle={{ padding: space.xl, gap: space.lg }}
+      >
+      <ScreenHeader kicker="Read" title="RESULT" />
       <Text style={{ ...textStyle.bodyLg, color: color.textPrimary }}>
         {trick?.canonicalName ?? analysis.calledTrick ?? "Called trick"}
       </Text>
@@ -91,7 +96,8 @@ export default function ResultScreen() {
         onPrimary={() => void save(false)}
         onSecondary={() => router.replace("/")}
       />
-    </ScrollView>
+      </ScrollView>
+    </ScreenSafeArea>
   );
 
   async function save(continueFilming: boolean) {
