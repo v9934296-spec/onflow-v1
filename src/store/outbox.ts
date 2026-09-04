@@ -1,9 +1,8 @@
 import { mintLocalId } from "../domain/mappers/ids";
 import type { LocalId } from "../domain/types/ids";
 import type { OutboxRow } from "../domain/models";
+import { isCurrentOutboxSchema, outboxOwnedBy } from "../domain/outbox";
 import { kv, kvKeys } from "./kv";
-
-const SCHEMA_VERSION = 1;
 const rows = new Map<string, OutboxRow>();
 let hydrated = false;
 
@@ -22,7 +21,7 @@ function ensureHydrated(): void {
     for (const item of parsed) {
       if (!item || typeof item !== "object") continue;
       const row = item as OutboxRow;
-      if (row.schemaVersion !== SCHEMA_VERSION || typeof row.localId !== "string") continue;
+      if (!isCurrentOutboxSchema(row.schemaVersion) || typeof row.localId !== "string") continue;
       rows.set(row.localId, row);
     }
   } catch {
@@ -36,7 +35,7 @@ export async function initOutbox(): Promise<void> {
 
 export async function upsertOutbox(row: OutboxRow): Promise<void> {
   ensureHydrated();
-  if (row.schemaVersion !== SCHEMA_VERSION) return;
+  if (!isCurrentOutboxSchema(row.schemaVersion)) return;
   rows.set(row.localId, row);
   persist();
 }
@@ -48,7 +47,7 @@ export async function getOutbox(localId: string): Promise<OutboxRow | null> {
 
 export async function listOutboxForUser(userId: string): Promise<OutboxRow[]> {
   ensureHydrated();
-  return [...rows.values()].filter((row) => row.ownerUserId === userId);
+  return [...rows.values()].filter((row) => outboxOwnedBy(row.ownerUserId, userId));
 }
 
 export async function listRecoverable(userId: string): Promise<OutboxRow[]> {
@@ -76,7 +75,7 @@ export async function discardRecoverable(userId: string): Promise<void> {
 
 export async function sealedRowsForOtherAccount(signedInUserId: string): Promise<OutboxRow[]> {
   ensureHydrated();
-  return [...rows.values()].filter((row) => row.ownerUserId !== signedInUserId);
+  return [...rows.values()].filter((row) => !outboxOwnedBy(row.ownerUserId, signedInUserId));
 }
 
 export function newLocalId(): LocalId {

@@ -9,7 +9,7 @@ import {
   nextRetryAt,
   toCatalogErrorKind,
 } from "../domain/outbox";
-import { compressionContract } from "../domain/compression";
+import { clipExceedsLaunchCeiling, compressionContract } from "../domain/compression";
 import { getOutbox, listRecoverable, upsertOutbox } from "./outbox";
 import { mintClipId } from "../domain/mappers/ids";
 
@@ -26,13 +26,9 @@ const PIPELINE_STATES = new Set([
 ]);
 
 function rejectIfOverCeiling(row: OutboxRow): OutboxRow | null {
-  if (row.durationSeconds > compressionContract.maxDurationSeconds) {
-    return { ...row, state: "failed_permanent", errorKind: "clip_too_long" };
-  }
-  if (row.sizeBytes > compressionContract.maxBytes) {
-    return { ...row, state: "failed_permanent", errorKind: "clip_too_large" };
-  }
-  return null;
+  const kind = clipExceedsLaunchCeiling(row);
+  if (!kind) return null;
+  return { ...row, state: "failed_permanent", errorKind: kind };
 }
 
 function fromApiError(error: ApiError, fallback: "upload_failed_retryable" | "analysis_failed" | "unknown") {

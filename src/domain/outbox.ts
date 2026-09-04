@@ -1,5 +1,16 @@
 import type { OutboxRow, OutboxState } from "./models";
 
+export const OUTBOX_SCHEMA_VERSION = 1 as const;
+
+export function isCurrentOutboxSchema(version: unknown): version is typeof OUTBOX_SCHEMA_VERSION {
+  return version === OUTBOX_SCHEMA_VERSION;
+}
+
+/** §12.1: another account cannot see, upload, or delete sealed rows. */
+export function outboxOwnedBy(ownerUserId: string, signedInUserId: string): boolean {
+  return ownerUserId === signedInUserId;
+}
+
 const RETRYABLE: ReadonlySet<OutboxState> = new Set(["failed_retryable"]);
 const TERMINAL: ReadonlySet<OutboxState> = new Set([
   "ready",

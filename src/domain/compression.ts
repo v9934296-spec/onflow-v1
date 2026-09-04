@@ -18,3 +18,13 @@ export const compressionContract = {
   stripLocation: true,
   status: "UNVERIFIED_PENDING_DEVICE" as const,
 };
+
+/** Spec §13: reject over 30s or 100MB before initiate-upload. Equal to the ceiling is allowed. */
+export function clipExceedsLaunchCeiling(input: {
+  durationSeconds: number;
+  sizeBytes: number;
+}): "clip_too_long" | "clip_too_large" | null {
+  if (input.durationSeconds > compressionContract.maxDurationSeconds) return "clip_too_long";
+  if (input.sizeBytes > compressionContract.maxBytes) return "clip_too_large";
+  return null;
+}

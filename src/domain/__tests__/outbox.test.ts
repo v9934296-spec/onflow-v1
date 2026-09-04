@@ -4,6 +4,8 @@ import {
   analyzingPhase,
   backoffDue,
   classifyHttpFailure,
+  isCurrentOutboxSchema,
+  outboxOwnedBy,
   progressFraction,
   resumeHref,
   toCatalogErrorKind,
@@ -59,6 +61,18 @@ describe("outbox rules", () => {
 
   it("resumes a draft on the analyzing route, not a new capture", () => {
     expect(resumeHref("local-1")).toBe("/analyzing?localId=local-1");
+    expect(resumeHref("local-1")).not.toContain("clipId");
+  });
+
+  it("ignores outbox rows from an older schema", () => {
+    expect(isCurrentOutboxSchema(1)).toBe(true);
+    expect(isCurrentOutboxSchema(0)).toBe(false);
+    expect(isCurrentOutboxSchema(2)).toBe(false);
+  });
+
+  it("seals outbox rows to the owning account", () => {
+    expect(outboxOwnedBy("user-a", "user-a")).toBe(true);
+    expect(outboxOwnedBy("user-a", "user-b")).toBe(false);
   });
 
   it("maps wire and free-text failures onto catalog kinds, never English", () => {

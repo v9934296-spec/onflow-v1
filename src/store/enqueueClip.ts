@@ -5,7 +5,7 @@ import { newLocalId, upsertOutbox } from "./outbox";
 import { runOutboxRow } from "./upload";
 import { useAuthStore } from "./authStore";
 import { useSessionStore } from "./sessionStore";
-import { compressionContract } from "../domain/compression";
+import { clipExceedsLaunchCeiling } from "../domain/compression";
 
 export async function enqueueClip(input: {
   uri: string;
@@ -17,8 +17,7 @@ export async function enqueueClip(input: {
 }): Promise<LocalId | null> {
   const userId = useAuthStore.getState().userId;
   if (!userId) return null;
-  if (input.durationSeconds > compressionContract.maxDurationSeconds) return null;
-  if (input.sizeBytes > compressionContract.maxBytes) return null;
+  if (clipExceedsLaunchCeiling(input)) return null;
   const session = useSessionStore.getState().session;
   const localId = newLocalId();
   const row: OutboxRow = {
