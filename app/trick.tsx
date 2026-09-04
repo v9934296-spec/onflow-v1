@@ -7,6 +7,7 @@ import { TrickCard } from "@/ui/components/Cards";
 import { Chip, FilterPill } from "@/ui/components/Chip";
 import { TextField } from "@/ui/components/Form";
 import { EmptyState, ErrorPanel, Skeleton } from "@/ui/components/States";
+import { ScreenHeader, ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { loadTrickCatalog, readRecentTrickIds, rememberConfirmedTrick } from "@/store/tricks";
 import { selectCatalogTrick } from "@/store/sessionActions";
 import { useSessionStore } from "@/store/sessionStore";
@@ -64,16 +65,16 @@ export default function TrickScreen() {
   if (error) return <ErrorPanel kind="offline" onPrimary={() => router.back()} />;
   if (!tricks) {
     return (
-      <View style={{ flex: 1, backgroundColor: color.bg, padding: space.xl }}>
+      <ScreenSafeArea style={{ padding: space.xl }}>
         <Skeleton height={48} />
         <Skeleton height={48} />
-      </View>
+      </ScreenSafeArea>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.bg, padding: space.xl, gap: space.md }}>
-      <Text style={{ ...textStyle.h1, color: color.textPrimary }}>CHOOSE TRICK</Text>
+    <ScreenSafeArea style={{ padding: space.xl, gap: space.md }}>
+      <ScreenHeader kicker="Call" title="CHOOSE TRICK" />
       <TextField
         value={query}
         onChangeText={setQuery}
@@ -171,6 +172,6 @@ export default function TrickScreen() {
           router.replace("/capture");
         }}
       />
-    </View>
+    </ScreenSafeArea>
   );
 }

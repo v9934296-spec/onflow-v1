@@ -1,5 +1,5 @@
 import { Pressable } from "react-native";
-import { color, media, touchTarget } from "../tokens";
+import { color, glow, media, PRESS_SCALE, touchTarget } from "../tokens";
 
 export function RecordControl({
   recording,
@@ -19,15 +19,19 @@ export function RecordControl({
       onPress={onPress}
       onLongPress={onPress}
       delayLongPress={180}
-      style={{
+      style={({ pressed }) => ({
         width: touchTarget.captureControl,
         height: touchTarget.captureControl,
+        minWidth: touchTarget.minimum,
+        minHeight: touchTarget.minimum,
         borderRadius: 999,
         backgroundColor: recording ? media.recording : color.neon,
         borderWidth: 4,
         borderColor: color.textPrimary,
-        opacity: disabled ? 0.4 : 1,
-      }}
+        opacity: disabled ? 0.4 : pressed ? 0.9 : 1,
+        transform: [{ scale: pressed && !disabled ? PRESS_SCALE : 1 }],
+        ...(recording ? glow.record : null),
+      })}
     />
   );
 }

@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 import { color, space, textStyle } from "@/ui/tokens";
 import { Button } from "@/ui/components/Button";
+import { ScreenHeader, ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "expo-router";
 import { listOutboxForUser } from "@/store/outbox";
@@ -20,8 +21,8 @@ export default function ProfileScreen() {
   }, [userId]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.bg, padding: space.xl, gap: space.lg }}>
-      <Text style={{ ...textStyle.h1, color: color.textPrimary }}>PROFILE</Text>
+    <ScreenSafeArea style={{ padding: space.xl, gap: space.lg }}>
+      <ScreenHeader kicker="Account" title="PROFILE" />
       <Text style={{ ...textStyle.mono, color: color.textTertiary }}>{userId}</Text>
       <Button label="Subscription" onPress={() => router.push("/paywall")} />
       <View style={{ marginTop: space.xxl, gap: space.md }}>
@@ -39,6 +40,6 @@ export default function ProfileScreen() {
             : "No queued clips on this account."}
         </Text>
       </View>
-    </View>
+    </ScreenSafeArea>
   );
 }

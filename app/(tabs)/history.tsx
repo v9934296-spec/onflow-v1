@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 import { color, space, textStyle } from "@/ui/tokens";
 import { EmptyState } from "@/ui/components/States";
+import { ScreenHeader, ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { useAuthStore } from "@/store/authStore";
 import { listOutboxForUser } from "@/store/outbox";
 import { useEffect, useState } from "react";
@@ -15,11 +16,12 @@ export default function HistoryScreen() {
   }, [userId]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.bg, padding: space.xl, gap: space.md }}>
-      <Text style={{ ...textStyle.h1, color: color.textPrimary }}>HISTORY</Text>
-      <Text style={{ ...textStyle.bodySm, color: color.textTertiary }}>
-        Individual scores only. No averages, trends, or cross-provider comparison.
-      </Text>
+    <ScreenSafeArea style={{ padding: space.xl, gap: space.md }}>
+      <ScreenHeader
+        kicker="Record"
+        title="HISTORY"
+        subtitle="Individual scores only. No averages, trends, or cross-provider comparison."
+      />
       {rows.length === 0 ? (
         <EmptyState title="No clips yet" body="Filmed attempts show up here with their real state — queued, uploading, analyzing, ready, or failed." />
       ) : (
@@ -30,6 +32,6 @@ export default function HistoryScreen() {
           </View>
         ))
       )}
-    </View>
+    </ScreenSafeArea>
   );
 }

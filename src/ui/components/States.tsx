@@ -36,6 +36,9 @@ export function OfflineBadge({ queued }: { queued: number }) {
         paddingVertical: space.sm,
         paddingHorizontal: space.lg,
         backgroundColor: color.surfaceAlt,
+        borderWidth: 1,
+        borderColor: color.hairline,
+        borderRadius: 6,
       }}
     >
       <Text style={{ ...textStyle.mono, color: color.amber }}>

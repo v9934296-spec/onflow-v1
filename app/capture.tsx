@@ -6,11 +6,15 @@ import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { color, space, textStyle } from "@/ui/tokens";
 import { Button } from "@/ui/components/Button";
 import { RecordControl } from "@/ui/components/RecordControl";
 import { ErrorPanel } from "@/ui/components/States";
 import { Toast } from "@/ui/components/Toast";
+import { CameraScrims } from "@/ui/components/CameraScrims";
+import { AsphaltSurface } from "@/ui/components/AsphaltSurface";
+import { ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { useSessionStore } from "@/store/sessionStore";
 import { enqueueClip } from "@/store/enqueueClip";
 import { compressionContract } from "@/domain/compression";
@@ -21,6 +25,7 @@ const LOW_STORAGE_BYTES = 200 * 1024 * 1024;
 
 export default function CaptureScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const trick = useSessionStore((s) => s.trick);
   const camera = useRef<CameraView>(null);
   const startedAt = useRef<number | null>(null);
@@ -72,47 +77,59 @@ export default function CaptureScreen() {
 
   if (error) {
     return (
-      <View style={{ flex: 1, backgroundColor: color.bg, justifyContent: "center" }}>
-        <ErrorPanel kind={error} onPrimary={() => setError(null)} />
-        <Button label="Close" variant="secondary" onPress={() => router.back()} />
-      </View>
+      <AsphaltSurface>
+        <ScreenSafeArea style={{ justifyContent: "center" }}>
+          <ErrorPanel kind={error} onPrimary={() => setError(null)} />
+          <Button label="Close" variant="secondary" onPress={() => router.back()} />
+        </ScreenSafeArea>
+      </AsphaltSurface>
     );
   }
 
-  if (!permission) return <View style={{ flex: 1, backgroundColor: color.bg }} />;
+  if (!permission) {
+    return (
+      <AsphaltSurface>
+        <View style={{ flex: 1 }} />
+      </AsphaltSurface>
+    );
+  }
 
   if (!permission.granted) {
     const permanent = !permission.canAskAgain;
     return (
-      <View style={{ flex: 1, backgroundColor: color.bg, padding: space.xl, justifyContent: "center", gap: space.md }}>
-        {permanent ? (
-          <>
-            <ErrorPanel kind="unknown" />
-            <Button label="Open Settings" onPress={() => void Linking.openSettings()} />
-          </>
-        ) : (
-          <Button label="Allow camera" onPress={() => void requestPermission()} />
-        )}
-        <Button
-          label="Pick from library"
-          variant="secondary"
-          onPress={() => void pickLibrary(finish, setError)}
-        />
-        <Button label="Close" variant="secondary" onPress={() => router.back()} />
-      </View>
+      <AsphaltSurface>
+        <ScreenSafeArea style={{ padding: space.xl, justifyContent: "center", gap: space.md }}>
+          {permanent ? (
+            <>
+              <ErrorPanel kind="unknown" />
+              <Button label="Open Settings" onPress={() => void Linking.openSettings()} />
+            </>
+          ) : (
+            <Button label="Allow camera" onPress={() => void requestPermission()} />
+          )}
+          <Button
+            label="Pick from library"
+            variant="secondary"
+            onPress={() => void pickLibrary(finish, setError)}
+          />
+          <Button label="Close" variant="secondary" onPress={() => router.back()} />
+        </ScreenSafeArea>
+      </AsphaltSurface>
     );
   }
 
   if (lowStorage) {
     return (
-      <View style={{ flex: 1, backgroundColor: color.bg, justifyContent: "center" }}>
-        <ErrorPanel kind="low_storage" onPrimary={() => setLowStorage(false)} />
-        <Button
-          label="Pick from library"
-          variant="secondary"
-          onPress={() => void pickLibrary(finish, setError)}
-        />
-      </View>
+      <AsphaltSurface>
+        <ScreenSafeArea style={{ justifyContent: "center" }}>
+          <ErrorPanel kind="low_storage" onPrimary={() => setLowStorage(false)} />
+          <Button
+            label="Pick from library"
+            variant="secondary"
+            onPress={() => void pickLibrary(finish, setError)}
+          />
+        </ScreenSafeArea>
+      </AsphaltSurface>
     );
   }
 
@@ -121,7 +138,16 @@ export default function CaptureScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: color.bg }}>
       <CameraView ref={camera} style={{ flex: 1 }} mode="video" mute={false}>
-        <View style={{ position: "absolute", top: 56, left: space.lg, right: space.lg, gap: space.sm }}>
+        <CameraScrims />
+        <View
+          style={{
+            position: "absolute",
+            top: insets.top + space.md,
+            left: space.lg,
+            right: space.lg,
+            gap: space.sm,
+          }}
+        >
           <Text {...overlayScale} style={{ ...textStyle.h2, color: color.textPrimary }}>
             {trick?.canonicalName ?? "No trick"}
           </Text>
@@ -141,11 +167,12 @@ export default function CaptureScreen() {
         <View
           style={{
             position: "absolute",
-            bottom: 48,
+            bottom: Math.max(insets.bottom, space.md) + space.sm,
             left: 0,
             right: 0,
             alignItems: "center",
             gap: space.md,
+            paddingHorizontal: space.lg,
           }}
         >
           {largeFile ? (

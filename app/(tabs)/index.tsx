@@ -1,8 +1,9 @@
 import { ScrollView, Text, View } from "react-native";
-import { color, space, textStyle } from "@/ui/tokens";
+import { color, radius, space, textStyle } from "@/ui/tokens";
 import { EmptyState, OfflineBadge, QueuedBadge, Skeleton } from "@/ui/components/States";
 import { Button } from "@/ui/components/Button";
 import { SessionCard, TrickCard, VideoThumbnail } from "@/ui/components/Cards";
+import { DeckMark, RailMark, ScreenHero, ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { useSessionStore } from "@/store/sessionStore";
 import { startFreeSkateSession } from "@/store/sessionActions";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -52,10 +53,10 @@ export default function HomeScreen() {
 
   if (hydrating) {
     return (
-      <View style={{ flex: 1, backgroundColor: color.bg, padding: space.xl }}>
+      <ScreenSafeArea style={{ padding: space.xl }}>
         <Skeleton height={42} />
         <Skeleton height={80} />
-      </View>
+      </ScreenSafeArea>
     );
   }
 
@@ -72,17 +73,32 @@ export default function HomeScreen() {
     );
   } else {
     cards.push(
-      <View key="start" style={{ gap: space.md }}>
+      <View
+        key="start"
+        style={{
+          gap: space.md,
+          borderRadius: radius.lg,
+          borderWidth: 1,
+          borderColor: color.hairline,
+          backgroundColor: color.surface,
+          overflow: "hidden",
+        }}
+      >
+        <View style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "62%", opacity: 0.8 }}>
+          <RailMark />
+        </View>
         <EmptyState title="Start a session" body="Free skate. No mode screen. One tap to begin." />
-        <Button
-          label="Start session"
-          onPress={() => {
-            kv.set(kvKeys.onboardingDone, "1");
-            void startFreeSkateSession().then((res) => {
-              if (res.ok) router.push("/trick");
-            });
-          }}
-        />
+        <View style={{ paddingHorizontal: space.lg, paddingBottom: space.lg }}>
+          <Button
+            label="Start session"
+            onPress={() => {
+              kv.set(kvKeys.onboardingDone, "1");
+              void startFreeSkateSession().then((res) => {
+                if (res.ok) router.push("/trick");
+              });
+            }}
+          />
+        </View>
       </View>,
     );
   }
@@ -115,20 +131,27 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: color.bg }} contentContainerStyle={{ padding: space.xl, gap: space.lg }}>
-      {offline ? <OfflineBadge queued={queued} /> : null}
-      <Text style={{ ...textStyle.hero, color: color.textPrimary }} maxFontSizeMultiplier={2}>
-        ONFLOW
-      </Text>
-      <Text style={{ ...textStyle.body, color: color.textSecondary }}>
-        {returning
-          ? trick
-            ? `Ready to film ${trick.canonicalName}.`
-            : "Film an attempt. Get an honest read. Record what actually happened."
-          : "Film an attempt. Get an honest read. Record what actually happened. Try again."}
-      </Text>
-      {cards.slice(0, 4)}
-    </ScrollView>
+    <ScreenSafeArea>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: color.bg }}
+        contentContainerStyle={{ padding: space.xl, gap: space.lg }}
+      >
+        {offline ? <OfflineBadge queued={queued} /> : null}
+        <ScreenHero kicker="Skate" title="ONFLOW">
+          <Text style={{ ...textStyle.body, color: color.textSecondary }}>
+            {returning
+              ? trick
+                ? `Ready to film ${trick.canonicalName}.`
+                : "Film an attempt. Get an honest read. Record what actually happened."
+              : "Film an attempt. Get an honest read. Record what actually happened. Try again."}
+          </Text>
+          <View style={{ height: 56, marginTop: space.sm }}>
+            <DeckMark />
+          </View>
+        </ScreenHero>
+        {cards.slice(0, 4)}
+      </ScrollView>
+    </ScreenSafeArea>
   );
 }
 
