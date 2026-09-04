@@ -59,4 +59,10 @@ export const kvKeys = {
   outbox: "onflow.outbox.v1",
   trickCatalog: "onflow.trickCatalog",
   recentTrickIds: "onflow.recentTrickIds",
+  sessionAttempts: "onflow.sessionAttempts",
+  pendingAttempts: "onflow.pendingAttempts.v1",
+  historyJobs: "onflow.historyJobs.v1",
+  historyTimeline: "onflow.historyTimeline.v1",
+  historyScores: "onflow.historyScores.v1",
+  seenJobIds: "onflow.seenJobIds.v1",
 } as const;

@@ -104,3 +104,55 @@ export const appleAuthSchema = z.object({
   user_id: z.string().min(1),
   is_new_user: z.boolean().optional(),
 });
+
+export const jobListItemSchema = z
+  .object({
+    job_id: z.string().min(1),
+    status: jobStatusSchema,
+    clip_label: z.string(),
+    updated_at: z.string().min(1),
+    failure_reason: nullableString,
+    video_playback_url: nullableString,
+    thumbnail_url: nullableString,
+  })
+  .passthrough();
+
+export const timelineItemSchema = z
+  .object({
+    session_id: z.string().min(1),
+    ended_at: nullableString,
+    spot: nullableString,
+    focus_trick: nullableString,
+    duration_seconds: z.number().int().nullable().optional(),
+    clips_count: z.number().int().optional(),
+    attempt_count: z.number().int().optional(),
+    best_pte_score: z.number().nullable().optional(),
+    thumbnail_url: nullableString,
+  })
+  .passthrough();
+
+export const timelineSchema = z.object({
+  items: z.array(timelineItemSchema).default([]),
+  page: z.number().int(),
+  page_size: z.number().int(),
+  has_more: z.boolean(),
+});
+
+export const quotaSchema = z
+  .object({
+    tier: z.string().min(1),
+    analyses_remaining: z.number().int(),
+    trial_expires_at: nullableString,
+    subscription_status: z.string().min(1),
+    bonus_analyses: z.number().int(),
+    monthly_free_remaining: z.number().int().nullable().optional(),
+  })
+  .passthrough();
+
+export const billingSyncSchema = z
+  .object({
+    tier: z.string().min(1),
+    bonus_analyses: z.number().int(),
+    monthly_free_remaining: z.number().int().nullable(),
+  })
+  .passthrough();

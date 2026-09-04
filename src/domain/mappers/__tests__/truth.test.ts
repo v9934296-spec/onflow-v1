@@ -82,6 +82,43 @@ describe("truth rules", () => {
       },
     });
     expect(unread.mechanics).toEqual([]);
+    expect(unread.score).toBeNull();
+  });
+
+  it("omits notes, cue, and issue when the video is unreadable", () => {
+    const analysis = mapClipJob({
+      job_id: "clip-1",
+      status: "completed",
+      result: {
+        review_readiness: "insufficient",
+        review_summary: "looked like a kickflip",
+        uncertainty_notes: ["guessing stance"],
+        processing_notes: ["low light"],
+        primary_issue_label: "Pop",
+        best_cue: "snap the tail later",
+        quality_signals: { video_readable: false, motion_detected: true },
+      },
+    });
+    expect(analysis.reviewSummary).toBeNull();
+    expect(analysis.uncertaintyNotes).toEqual([]);
+    expect(analysis.processingNotes).toEqual([]);
+    expect(analysis.primaryIssueLabel).toBeNull();
+    expect(analysis.bestCue).toBeNull();
+  });
+
+  it("drops the score when quality signals say no read should be shown", () => {
+    const analysis = mapClipJob({
+      job_id: "clip-1",
+      status: "completed",
+      result: {
+        review_readiness: "usable",
+        normalized_review: { score: 8, model: "gemini" },
+        quality_signals: { video_readable: true, motion_detected: false },
+      },
+    });
+    expect(analysis.score).toBeNull();
+    expect(analysis.mechanics).toEqual([]);
+    expect(analysis.providerModel).toBe("gemini");
   });
 
   it("does not treat engine unclear as a skater outcome", () => {

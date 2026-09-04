@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   filterTricks,
+  formatTrickLabel,
   mimeFromUri,
   nearestTricks,
   popularFromRecent,
@@ -52,6 +53,15 @@ describe("trick registry helpers", () => {
       "Heelflip",
       "Kickflip",
     ]);
+  });
+
+  it("joins stance and direction onto the canonical name", () => {
+    expect(
+      formatTrickLabel({ canonicalName: "Kickflip", stance: null, direction: null }),
+    ).toBe("Kickflip");
+    expect(
+      formatTrickLabel({ canonicalName: "Kickflip", stance: "Switch", direction: "Frontside" }),
+    ).toBe("Kickflip · Switch · Frontside");
   });
 
   it("maps MOV uris to quicktime and everything else to mp4", () => {

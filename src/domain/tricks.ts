@@ -54,6 +54,15 @@ export function rememberRecentId(existing: readonly string[], trickId: string, l
   return next.slice(0, limit);
 }
 
+export function formatTrickLabel(trick: {
+  canonicalName: string;
+  stance: string | null;
+  direction: string | null;
+}): string {
+  const mods = [trick.stance, trick.direction].filter(Boolean);
+  return mods.length ? `${trick.canonicalName} · ${mods.join(" · ")}` : trick.canonicalName;
+}
+
 export function popularFromRecent(
   tricks: readonly CatalogTrick[],
   recentIds: readonly string[],

@@ -60,22 +60,23 @@ export function mapClipJob(job: ClipJobInput): AnalysisResult {
 
   const videoReadable = quality?.video_readable ?? null;
   const motionDetected = quality?.motion_detected ?? null;
-  const gatedMechanics =
-    videoReadable === false || motionDetected === false ? [] : mechanics;
+  const unreadable = videoReadable === false || motionDetected === false;
+  const gatedMechanics = unreadable ? [] : mechanics;
+  const gatedScore = unreadable ? null : score;
 
   return {
     clipId: mintClipId(job.job_id),
     jobId: mintJobId(job.job_id),
     status: job.status,
     readiness,
-    score,
+    score: gatedScore,
     engineLanded: result?.landed ?? null,
     calledTrick: result?.clip_label ?? null,
-    reviewSummary: result?.review_summary ?? null,
-    uncertaintyNotes: result?.uncertainty_notes ?? [],
-    processingNotes: result?.processing_notes ?? [],
-    primaryIssueLabel: result?.primary_issue_label ?? null,
-    bestCue: result?.best_cue ?? null,
+    reviewSummary: unreadable ? null : (result?.review_summary ?? null),
+    uncertaintyNotes: unreadable ? [] : (result?.uncertainty_notes ?? []),
+    processingNotes: unreadable ? [] : (result?.processing_notes ?? []),
+    primaryIssueLabel: unreadable ? null : (result?.primary_issue_label ?? null),
+    bestCue: unreadable ? null : (result?.best_cue ?? null),
     quality: { videoReadable, motionDetected },
     mechanics: gatedMechanics,
     videoPlaybackUrl: result?.video_playback_url ?? null,

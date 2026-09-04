@@ -4,6 +4,7 @@ import { EmptyState, OfflineBadge, QueuedBadge, Skeleton } from "@/ui/components
 import { Button } from "@/ui/components/Button";
 import { SessionCard, TrickCard, VideoThumbnail } from "@/ui/components/Cards";
 import { DeckMark, RailMark, ScreenHero, ScreenSafeArea } from "@/ui/components/ScreenChrome";
+import { EngineTeaser } from "@/ui/components/EngineTeaser";
 import { useSessionStore } from "@/store/sessionStore";
 import { startFreeSkateSession } from "@/store/sessionActions";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -149,6 +150,7 @@ export default function HomeScreen() {
             <DeckMark />
           </View>
         </ScreenHero>
+        <EngineTeaser onPress={() => router.push("/engine")} />
         {cards.slice(0, 4)}
       </ScrollView>
     </ScreenSafeArea>

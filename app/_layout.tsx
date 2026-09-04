@@ -17,6 +17,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useSessionStore } from "@/store/sessionStore";
 import { initOutbox } from "@/store/outbox";
 import { drainRecoverable } from "@/store/upload";
+import { drainPendingAttempts } from "@/store/attempts";
 import { color } from "@/ui/tokens";
 
 function AuthGate({ children }: { children: ReactNode }) {
@@ -34,11 +35,16 @@ function AuthGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (phase !== "signed_in") return;
     const userId = useAuthStore.getState().userId;
-    if (userId) void drainRecoverable(userId);
+    if (userId) {
+      void drainRecoverable(userId);
+      void drainPendingAttempts(userId);
+    }
     const sub = AppState.addEventListener("change", (next) => {
       if (next !== "active") return;
       const id = useAuthStore.getState().userId;
-      if (id) void drainRecoverable(id);
+      if (!id) return;
+      void drainRecoverable(id);
+      void drainPendingAttempts(id);
     });
     return () => sub.remove();
   }, [phase]);
@@ -87,6 +93,8 @@ export default function RootLayout() {
           <Stack.Screen name="capture" options={{ gestureEnabled: false }} />
           <Stack.Screen name="analyzing" options={{ gestureEnabled: false }} />
           <Stack.Screen name="result" />
+          <Stack.Screen name="saved" />
+          <Stack.Screen name="engine" />
           <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
         </Stack>
       </AuthGate>

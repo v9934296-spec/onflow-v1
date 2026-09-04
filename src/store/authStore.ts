@@ -34,21 +34,34 @@ export const useAuthStore = create<AuthSlice>((set, get) => ({
       set({ phase: "signed_in", userId: session.userId });
       const { restoreActiveSession } = await import("./sessionActions");
       await restoreActiveSession();
+      const { configureBilling } = await import("./billing");
+      await configureBilling(session.userId);
       return;
     }
     set({ phase: "signed_in", userId: me.data.user_id });
     const { restoreActiveSession } = await import("./sessionActions");
     await restoreActiveSession();
+    const { configureBilling } = await import("./billing");
+    await configureBilling(me.data.user_id);
   },
   completeApple: async (idToken) => {
     const res = await signInWithApple(idToken);
     if (!res.ok) return false;
     await saveSession(res.data.token, res.data.user_id);
     set({ phase: "signed_in", userId: res.data.user_id });
+    const { configureBilling } = await import("./billing");
+    await configureBilling(res.data.user_id);
     return true;
   },
   signOut: async () => {
     await clearSession();
     set({ phase: "signed_out", userId: null });
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const Purchases = require("react-native-purchases").default as { logOut?: () => Promise<unknown> };
+      await Purchases.logOut?.();
+    } catch {
+      /* native module absent in tests */
+    }
   },
 }));

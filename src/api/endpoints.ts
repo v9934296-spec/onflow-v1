@@ -3,8 +3,12 @@ import {
   accountMeSchema,
   appleAuthSchema,
   attemptSchema,
+  billingSyncSchema,
   clipJobSchema,
+  jobListItemSchema,
+  quotaSchema,
   sessionSchema,
+  timelineSchema,
   trickListSchema,
 } from "./schemas/runtime";
 import { mapAttempt, mapCatalogTrick, mapSession } from "../domain/mappers/records";
@@ -12,6 +16,8 @@ import { mapClipJob } from "../domain/mappers/clipJob";
 import type { AnalysisResult, Attempt, CatalogTrick, SkateSession } from "../domain/models";
 import type { ApiResult } from "./types";
 import { fail, ok } from "./types";
+
+type JobListItem = ReturnType<typeof jobListItemSchema.parse>;
 
 function validated<T>(
   parsed: { success: true; data: T } | { success: false },
@@ -158,9 +164,45 @@ export async function exportAccount() {
   return apiRequest<unknown>("/api/v1/account/export");
 }
 
-export async function syncBilling(hasPro: boolean) {
-  return apiRequest<unknown>("/api/v1/billing/sync", {
+export async function fetchClipJobs() {
+  const res = await apiRequest<unknown>("/api/v1/clips/jobs?limit=30");
+  if (!res.ok) return res;
+  if (!Array.isArray(res.data)) return fail({ kind: "contract" });
+  const jobs: JobListItem[] = [];
+  for (const raw of res.data) {
+    const parsed = jobListItemSchema.safeParse(raw);
+    if (!parsed.success) return fail({ kind: "contract" });
+    jobs.push(parsed.data);
+  }
+  return ok(jobs);
+}
+
+export async function fetchProgressionTimeline(page = 1) {
+  const res = await apiRequest<unknown>(`/api/v1/progression/timeline?page=${page}&page_size=20`);
+  if (!res.ok) return res;
+  const parsed = timelineSchema.safeParse(res.data);
+  if (!parsed.success) return fail({ kind: "contract" });
+  return ok(parsed.data);
+}
+
+export async function fetchQuota() {
+  const res = await apiRequest<unknown>("/api/v1/account/quota");
+  if (!res.ok) return res;
+  const parsed = quotaSchema.safeParse(res.data);
+  if (!parsed.success) return fail({ kind: "contract" });
+  return ok(parsed.data);
+}
+
+export async function syncBilling(input: { hasPro: boolean; rcAppUserId?: string | null }) {
+  const res = await apiRequest<unknown>("/api/v1/billing/sync", {
     method: "POST",
-    json: { has_pro: hasPro },
+    json: {
+      has_pro: input.hasPro,
+      rc_app_user_id: input.rcAppUserId ?? null,
+    },
   });
+  if (!res.ok) return res;
+  const parsed = billingSyncSchema.safeParse(res.data);
+  if (!parsed.success) return fail({ kind: "contract" });
+  return ok(parsed.data);
 }
