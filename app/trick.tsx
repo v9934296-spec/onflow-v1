@@ -11,6 +11,9 @@ import { ScreenHeader, ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { loadTrickCatalog, readRecentTrickIds, rememberConfirmedTrick } from "@/store/tricks";
 import { selectCatalogTrick } from "@/store/sessionActions";
 import { useSessionStore } from "@/store/sessionStore";
+import { useSkaterProfileStore } from "@/store/skaterProfileStore";
+import { rankTricksForProfile } from "@/domain/skaterProfile";
+import { stanceExplainer } from "@/ui/copy/personalization";
 import type { CatalogTrick } from "@/domain/models";
 import {
   DIRECTION_OPTIONS,
@@ -24,6 +27,7 @@ import {
 export default function TrickScreen() {
   const router = useRouter();
   const existing = useSessionStore((s) => s.trick);
+  const profile = useSkaterProfileStore((s) => s.profile);
   const [tricks, setTricks] = useState<CatalogTrick[] | null>(null);
   const [error, setError] = useState(false);
   const [query, setQuery] = useState("");
@@ -56,9 +60,9 @@ export default function TrickScreen() {
   const filtered = useMemo(() => {
     if (!tricks) return [];
     const hits = filterTricks(tricks, query, category);
-    if (hits.length > 0) return hits;
-    return nearestTricks(tricks, query);
-  }, [tricks, query, category]);
+    // Profile styles reorder; they never remove a registry trick.
+    return rankTricksForProfile(hits.length > 0 ? hits : nearestTricks(tricks, query), profile);
+  }, [tricks, query, category, profile]);
 
   const exactEmpty = Boolean(tricks && filterTricks(tricks, query, category).length === 0);
 
@@ -141,6 +145,11 @@ export default function TrickScreen() {
         )}
       </ScrollView>
       <Text style={{ ...textStyle.label, color: color.textSecondary }}>Stance</Text>
+      {stanceExplainer(profile?.naturalStance ?? null) ? (
+        <Text style={{ ...textStyle.bodySm, color: color.textTertiary }}>
+          {stanceExplainer(profile?.naturalStance ?? null)}
+        </Text>
+      ) : null}
       <ScrollView horizontal style={{ flexGrow: 0 }} contentContainerStyle={{ gap: space.sm }}>
         {STANCE_OPTIONS.map((item) => (
           <Chip

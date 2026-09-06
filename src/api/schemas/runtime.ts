@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  AGE_RANGES,
+  EXPERIENCE_LEVELS,
+  NATURAL_STANCES,
+  SKATE_STYLES,
+} from "../../domain/skaterProfile";
 
 const nullableString = z.string().nullable().optional();
 
@@ -98,6 +104,27 @@ export const accountMeSchema = z
     tier: z.string().min(1),
   })
   .passthrough();
+
+/**
+ * Skater profile. Enums are strict: an unsupported server value is a contract
+ * failure, never a silently substituted preference.
+ */
+export const skaterProfileSchema = z
+  .object({
+    natural_stance: z.enum(NATURAL_STANCES).nullable().optional(),
+    skate_styles: z.array(z.enum(SKATE_STYLES)).optional(),
+    primary_skate_style: z.enum(SKATE_STYLES).nullable().optional(),
+    experience_level: z.enum(EXPERIENCE_LEVELS).nullable().optional(),
+    age_range: z.enum(AGE_RANGES).nullable().optional(),
+    city: nullableString,
+    home_park: nullableString,
+    favorite_brands: z.array(z.string()).optional(),
+    onboarding_completed_at: nullableString,
+  })
+  .passthrough();
+
+/** `GET` returns `null` before a profile exists. */
+export const skaterProfileResponseSchema = skaterProfileSchema.nullable();
 
 export const appleAuthSchema = z.object({
   token: z.string().min(1),

@@ -1,4 +1,4 @@
-import { Modal, Pressable, Text, TextInput, View } from "react-native";
+import { Modal, Pressable, Text, TextInput, View, type TextInputProps } from "react-native";
 import { color, radius, space, textStyle, touchTarget } from "../tokens";
 import { Button } from "./Button";
 
@@ -8,15 +8,15 @@ export function TextField({
   placeholder,
   accessibilityLabel,
   editable = true,
-}: {
+  ...rest
+}: Omit<TextInputProps, "style" | "value" | "onChangeText" | "editable"> & {
   value: string;
   onChangeText: (next: string) => void;
-  placeholder?: string;
-  accessibilityLabel?: string;
   editable?: boolean;
 }) {
   return (
     <TextInput
+      {...rest}
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}

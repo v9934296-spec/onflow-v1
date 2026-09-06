@@ -48,7 +48,12 @@ export const useAuthStore = create<AuthSlice>((set, get) => ({
     return true;
   },
   signOut: async () => {
+    const previous = get().userId;
     await clearSession();
+    if (previous) {
+      const { useSkaterProfileStore } = await import("./skaterProfileStore");
+      useSkaterProfileStore.getState().purge(previous);
+    }
     set({ phase: "signed_out", userId: null });
   },
 }));

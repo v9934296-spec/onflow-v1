@@ -24,6 +24,7 @@ export default function ProfileScreen() {
     <ScreenSafeArea style={{ padding: space.xl, gap: space.lg }}>
       <ScreenHeader kicker="Account" title="PROFILE" />
       <Text style={{ ...textStyle.mono, color: color.textTertiary }}>{userId}</Text>
+      <Button label="Personalization" variant="secondary" onPress={() => router.push("/personalization")} />
       <Button label="Subscription" onPress={() => router.push("/paywall")} />
       <View style={{ marginTop: space.xxl, gap: space.md }}>
         <Text style={{ ...textStyle.label, color: color.red }}>Destructive</Text>

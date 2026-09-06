@@ -60,3 +60,9 @@ export const kvKeys = {
   trickCatalog: "onflow.trickCatalog",
   recentTrickIds: "onflow.recentTrickIds",
 } as const;
+
+/** Per-account keys. Sign-out purges exactly these; another account never reads them. */
+export const kvUserKeys = {
+  skaterProfile: (userId: string) => `onflow.skaterProfile.v1.${userId}`,
+  onboardingDraft: (userId: string) => `onflow.onboardingDraft.v1.${userId}`,
+} as const;

@@ -39,3 +39,9 @@ The redesign supersedes spec §7 (screen presentation) and §10 (design system) 
 |----------|---------|
 | [redesign-000-phase-0-audit.md](./redesign-000-phase-0-audit.md) | Audit findings, dead-control list, owner decisions B1–B3, implementation order. |
 | [redesign-001-design-foundation.md](./redesign-001-design-foundation.md) | Phase 1 **implemented:** tokens, primitives, what changed and what is guarded by test. |
+
+## Skater personalization
+
+| Document | Purpose |
+|----------|---------|
+| [personalization-001-client.md](./personalization-001-client.md) | Client **implemented** against the designed contract. Age step **paused** (P2). Backend deliverables listed; endpoint not yet in `openapi.json`. |

@@ -14,6 +14,9 @@ import { useAuthStore } from "@/store/authStore";
 import { listOutboxForUser, listRecoverable } from "@/store/outbox";
 import { loadTrickCatalog, readRecentTrickIds } from "@/store/tricks";
 import type { CatalogTrick, OutboxRow } from "@/domain/models";
+import { greetingContext } from "@/domain/skaterProfile";
+import { useSkaterProfileStore } from "@/store/skaterProfileStore";
+import { styleCopy } from "@/ui/copy/personalization";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -21,6 +24,7 @@ export default function HomeScreen() {
   const trick = useSessionStore((s) => s.trick);
   const hydrating = useSessionStore((s) => s.hydrating);
   const userId = useAuthStore((s) => s.userId);
+  const greeting = useSkaterProfileStore((s) => greetingContext(s.profile));
   const [offline, setOffline] = useState(false);
   const [queued, setQueued] = useState(0);
   const [latest, setLatest] = useState<OutboxRow | null>(null);
@@ -137,7 +141,14 @@ export default function HomeScreen() {
         contentContainerStyle={{ padding: space.xl, gap: space.lg }}
       >
         {offline ? <OfflineBadge queued={queued} /> : null}
-        <ScreenHero kicker="Skate" title="ONFLOW">
+        <ScreenHero
+          kicker={
+            [greeting.style ? styleCopy[greeting.style].label : null, greeting.spot]
+              .filter(Boolean)
+              .join(" · ") || "Skate"
+          }
+          title="ONFLOW"
+        >
           <Text style={{ ...textStyle.body, color: color.textSecondary }}>
             {returning
               ? trick

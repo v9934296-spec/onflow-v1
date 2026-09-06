@@ -123,6 +123,16 @@ export const errorCopy: Record<ErrorKind, ErrorCopy> = {
     body: "Your phone is low on space, so OnFlow won't film until there's room for a 30-second clip.",
     primaryAction: "Got it",
   },
+  profile_save_failed: {
+    title: "Couldn't save your setup",
+    body: "Your answers are kept on this phone. Try again when you're back online.",
+    primaryAction: "Try again",
+  },
+  profile_invalid: {
+    title: "One more answer needed",
+    body: "Something required is missing or didn't fit. Check your answers and try again.",
+    primaryAction: "Review answers",
+  },
   unknown: {
     title: "Something went wrong",
     body: "We're not sure what happened. Your footage is safe on your phone.",
