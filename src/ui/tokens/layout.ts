@@ -1,4 +1,12 @@
-/** Design tokens, spec 10.3. */
+/**
+ * Design tokens — spacing, radii, borders, touch targets, motion.
+ *
+ * Supersedes spec §10.3 under the V1 mobile redesign. Radii tightened
+ * (`14 → 12` max, `10 → 8` default) so surfaces read as hard sections rather
+ * than rounded cards; `glow.center` removed — a drop-shadow glow is
+ * decoration, and the center action earns dominance through size and
+ * contrast instead.
+ */
 
 export const space = {
   xs: 4,
@@ -10,11 +18,20 @@ export const space = {
   xxxl: 48,
 } as const;
 
+/** Restrained on purpose. Anything above `lg` needs a specific reason. */
 export const radius = {
+  none: 0,
+  xs: 4,
   sm: 6,
-  md: 10,
-  lg: 14,
+  md: 8,
+  lg: 12,
   pill: 999,
+} as const;
+
+/** Rules and outlines. Hairline for structure, rule for emphasis. */
+export const border = {
+  hairline: 1,
+  rule: 2,
 } as const;
 
 /** Minimums, not suggestions (spec 10.3, guardrails 12). */
@@ -25,24 +42,24 @@ export const touchTarget = {
   captureControl: 76,
 } as const;
 
+/** Fast and physical. Nothing in the product should take longer than `enter`. */
 export const motionMs = {
-  press: 90,
-  enter: 220,
-  exit: 160,
+  press: 120,
+  enter: 200,
+  exit: 140,
   ambient: 1800,
 } as const;
 
+/** Press compression for ordinary controls. */
 export const PRESS_SCALE = 0.97;
+/** Press compression for the large physical controls: FILM, record, outcome. */
+export const PRESS_SCALE_HARD = 0.94;
 
-/** Soft neon / recording glows. Hex matches `color.neon` and `media.recording`. */
+/**
+ * The one remaining glow: the recording state must be unmistakable from
+ * arm's length in sun. Hex matches `media.recording`.
+ */
 export const glow = {
-  center: {
-    shadowColor: "#00FFA6",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.28,
-    shadowRadius: 14,
-    elevation: 8,
-  },
   record: {
     shadowColor: "#FF3B3B",
     shadowOffset: { width: 0, height: 0 },

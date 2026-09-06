@@ -30,3 +30,12 @@ Contract verification against the V1 build spec. **Phase 0 closed by owner 2026-
 | OF-007 | DOC-001 remaining UNVERIFIED / §18.3 | **Superseded** by the Phase 0 gate audit |
 
 Phase 1 may start. Do not treat 6 Mbps as measured. Q&A 11 stays OPEN as measurement debt.
+
+## V1 mobile redesign ledger
+
+The redesign supersedes spec §7 (screen presentation) and §10 (design system) by owner decision. Contract, truth rules and state ownership are unchanged.
+
+| Document | Purpose |
+|----------|---------|
+| [redesign-000-phase-0-audit.md](./redesign-000-phase-0-audit.md) | Audit findings, dead-control list, owner decisions B1–B3, implementation order. |
+| [redesign-001-design-foundation.md](./redesign-001-design-foundation.md) | Phase 1 **implemented:** tokens, primitives, what changed and what is guarded by test. |

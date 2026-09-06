@@ -1,8 +1,12 @@
 import { ActivityIndicator, Pressable, Text } from "react-native";
 import type { CenterAction } from "@/domain/centerAction";
-import { color, glow, PRESS_SCALE, textStyle, touchTarget } from "../tokens";
+import { border, color, PRESS_SCALE_HARD, textStyle, touchTarget } from "../tokens";
 import { centerActionLines } from "./centerActionLabel";
 
+/**
+ * The tab bar's context action. Dominant through size and solid volt fill —
+ * a bg-colored ring separates it from the bar instead of a drop-shadow glow.
+ */
 export function CenterActionButton({
   action,
   onPress,
@@ -28,13 +32,14 @@ export function CenterActionButton({
         minHeight: touchTarget.minimum,
         marginTop: -18,
         borderRadius: 999,
+        borderWidth: border.rule * 2,
+        borderColor: color.bg,
         backgroundColor: color.neon,
         alignItems: "center",
         justifyContent: "center",
         paddingHorizontal: 8,
-        opacity: hydrating ? 0.7 : pressed ? 0.92 : 1,
-        transform: [{ scale: pressed && !hydrating ? PRESS_SCALE : 1 }],
-        ...glow.center,
+        opacity: hydrating ? 0.7 : 1,
+        transform: [{ scale: pressed && !hydrating ? PRESS_SCALE_HARD : 1 }],
       })}
     >
       {hydrating ? (

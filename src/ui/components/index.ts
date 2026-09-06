@@ -1,4 +1,9 @@
 export { Button } from "./Button";
+export { OnFlowButton } from "./OnFlowButton";
+export { OnFlowHeader } from "./OnFlowHeader";
+export { OnFlowDivider } from "./OnFlowDivider";
+export { OnFlowMeta, MetaTag } from "./OnFlowMeta";
+export { FootageFrame, FootageThumbnail } from "./Footage";
 export { RecordControl } from "./RecordControl";
 export { Chip, FilterPill } from "./Chip";
 export { TrickCard, SessionCard, VideoThumbnail } from "./Cards";
