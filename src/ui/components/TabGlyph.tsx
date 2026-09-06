@@ -1,6 +1,6 @@
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 
-type Glyph = "home" | "flow" | "history" | "profile";
+type Glyph = "home" | "session" | "history" | "profile";
 
 export function TabGlyph({
   name,
@@ -23,14 +23,12 @@ export function TabGlyph({
           strokeLinejoin="round"
         />
       ) : null}
-      {name === "flow" ? (
-        <Path
-          d="M4 14c2.4-4 4.4-6 8-6s5.6 2 8 6M4 10c2.4 4 4.4 6 8 6s5.6-2 8-6"
-          fill="none"
-          stroke={color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-        />
+      {name === "session" ? (
+        // A frame with a record mark: the session is the thing being filmed.
+        <>
+          <Rect x="3" y="5" width="18" height="14" rx="1.5" fill="none" stroke={color} strokeWidth={stroke} />
+          <Circle cx="12" cy="12" r={focused ? 3.2 : 2.6} fill={color} />
+        </>
       ) : null}
       {name === "history" ? (
         <>

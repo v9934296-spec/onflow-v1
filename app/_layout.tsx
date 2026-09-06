@@ -16,6 +16,8 @@ import { queryClient } from "@/store/queryClient";
 import { useAuthStore } from "@/store/authStore";
 import { useSessionStore } from "@/store/sessionStore";
 import { useSkaterProfileStore } from "@/store/skaterProfileStore";
+import { useSessionAttemptsStore } from "@/store/sessionAttempts";
+import { retryPendingSessionEnd } from "@/store/sessionActions";
 import { initOutbox } from "@/store/outbox";
 import { drainRecoverable } from "@/store/upload";
 import {
@@ -53,15 +55,21 @@ function AuthGate({ children }: { children: ReactNode }) {
     void loadProfile(userId);
   }, [phase, userId, loadProfile]);
 
+  // Everything the phone owes the server is retried on sign-in and every foreground.
   useEffect(() => {
     if (phase !== "signed_in") return;
+    const settle = (current: string) => {
+      void drainRecoverable(current);
+      void useSessionAttemptsStore.getState().flush(current);
+      void retryPendingSessionEnd();
+    };
     const id = useAuthStore.getState().userId;
-    if (id) void drainRecoverable(id);
+    if (id) settle(id);
     const sub = AppState.addEventListener("change", (next) => {
       if (next !== "active") return;
       const current = useAuthStore.getState().userId;
       if (!current) return;
-      void drainRecoverable(current);
+      settle(current);
       if (useSkaterProfileStore.getState().status !== "loaded") void loadProfile(current);
     });
     return () => sub.remove();

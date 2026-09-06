@@ -80,9 +80,9 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="flow"
           options={{
-            title: "Flow",
-            tabBarAccessibilityLabel: "Flow",
-            tabBarIcon: ({ color: tint, focused }) => <TabGlyph name="flow" color={tint} focused={focused} />,
+            title: "Session",
+            tabBarAccessibilityLabel: "Session",
+            tabBarIcon: ({ color: tint, focused }) => <TabGlyph name="session" color={tint} focused={focused} />,
           }}
         />
         <Tabs.Screen

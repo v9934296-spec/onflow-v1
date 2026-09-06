@@ -39,6 +39,7 @@ The redesign supersedes spec §7 (screen presentation) and §10 (design system) 
 |----------|---------|
 | [redesign-000-phase-0-audit.md](./redesign-000-phase-0-audit.md) | Audit findings, dead-control list, owner decisions B1–B3, implementation order. |
 | [redesign-001-design-foundation.md](./redesign-001-design-foundation.md) | Phase 1 **implemented:** tokens, primitives, what changed and what is guarded by test. |
+| [redesign-002-session-screen.md](./redesign-002-session-screen.md) | Phase 2 slice 1 **implemented:** the canonical SESSION screen, persisted attempt queue, pending session-end retry. |
 
 ## Skater personalization
 

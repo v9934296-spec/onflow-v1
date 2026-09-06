@@ -2,16 +2,33 @@ import { create } from "zustand";
 import type { SelectedTrick, SkateSession } from "../domain/models";
 import { kv, kvKeys } from "./kv";
 
+export interface PendingSessionEnd {
+  readonly sessionId: string;
+  readonly endedAt: string;
+}
+
 interface SessionSlice {
   hydrating: boolean;
   session: SkateSession | null;
   trick: SelectedTrick | null;
-  pendingEnd: string | null;
+  /** A session ended on this phone that the server has not confirmed yet. Persisted. */
+  pendingEnd: PendingSessionEnd | null;
   setHydrating: (value: boolean) => void;
   setSession: (session: SkateSession | null) => void;
   setTrick: (trick: SelectedTrick | null) => void;
-  setPendingEnd: (endedAt: string | null) => void;
+  setPendingEnd: (pending: PendingSessionEnd | null) => void;
   hydrateFromKv: () => void;
+}
+
+function readJson<T>(key: string): T | null {
+  const raw = kv.get(key);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    kv.delete(key);
+    return null;
+  }
 }
 
 export const useSessionStore = create<SessionSlice>((set) => ({
@@ -35,26 +52,17 @@ export const useSessionStore = create<SessionSlice>((set) => ({
     else kv.delete(kvKeys.selectedTrick);
     set({ trick });
   },
-  setPendingEnd: (pendingEnd) => set({ pendingEnd }),
+  setPendingEnd: (pendingEnd) => {
+    if (pendingEnd) kv.set(kvKeys.pendingSessionEnd, JSON.stringify(pendingEnd));
+    else kv.delete(kvKeys.pendingSessionEnd);
+    set({ pendingEnd });
+  },
   hydrateFromKv: () => {
-    const raw = kv.get(kvKeys.selectedTrick);
-    let trick: SelectedTrick | null = null;
-    if (raw) {
-      try {
-        trick = JSON.parse(raw) as SelectedTrick;
-      } catch {
-        kv.delete(kvKeys.selectedTrick);
-      }
-    }
-    const sessionRaw = kv.get(kvKeys.activeSession);
-    let session: SkateSession | null = null;
-    if (sessionRaw) {
-      try {
-        session = JSON.parse(sessionRaw) as SkateSession;
-      } catch {
-        kv.delete(kvKeys.activeSession);
-      }
-    }
-    set({ trick, session, hydrating: false });
+    set({
+      trick: readJson<SelectedTrick>(kvKeys.selectedTrick),
+      session: readJson<SkateSession>(kvKeys.activeSession),
+      pendingEnd: readJson<PendingSessionEnd>(kvKeys.pendingSessionEnd),
+      hydrating: false,
+    });
   },
 }));

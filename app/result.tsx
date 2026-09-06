@@ -12,7 +12,7 @@ import { ScreenHeader, ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { pollJob } from "@/store/upload";
 import { queryClient } from "@/store/queryClient";
 import type { AnalysisResult, AttemptOutcome } from "@/domain/models";
-import { reportOutcomeAndMaybeContinue } from "@/store/attempts";
+import { recordOutcome } from "@/store/attempts";
 import { useSessionStore } from "@/store/sessionStore";
 
 export default function ResultScreen() {
@@ -94,7 +94,7 @@ export default function ResultScreen() {
         primaryLabel="Save and leave"
         secondaryLabel="Discard outcome"
         onPrimary={() => void save(false)}
-        onSecondary={() => router.replace("/")}
+        onSecondary={() => router.replace("/flow")}
       />
       </ScrollView>
     </ScreenSafeArea>
@@ -106,7 +106,8 @@ export default function ResultScreen() {
       else setConfirmLeave(true);
       return;
     }
-    await reportOutcomeAndMaybeContinue(outcome);
-    router.replace(continueFilming ? "/capture" : "/");
+    // Persisted locally before the request; queued if offline. Never lost.
+    await recordOutcome(outcome);
+    router.replace(continueFilming ? "/capture" : "/flow");
   }
 }

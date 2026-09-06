@@ -19,7 +19,8 @@ import {
   touchTarget,
 } from "../tokens";
 
-type Variant = "primary" | "secondary" | "ghost" | "destructive";
+/** `quiet` is a text action in alum — for leaving, ending, dismissing. Not red: ending a session is not an error. */
+type Variant = "primary" | "secondary" | "ghost" | "quiet" | "destructive";
 type Size = "hero" | "primary" | "compact";
 
 /**
@@ -73,7 +74,9 @@ export function OnFlowButton({
       ? color.bg
       : variant === "ghost"
         ? color.neon
-        : color.textPrimary;
+        : variant === "quiet"
+          ? color.alum
+          : color.textPrimary;
   const height =
     size === "hero"
       ? touchTarget.captureControl
