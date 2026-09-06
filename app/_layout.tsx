@@ -128,6 +128,7 @@ export default function RootLayout() {
           <Stack.Screen name="sign-in" />
           <Stack.Screen name="trick" />
           <Stack.Screen name="capture" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="review" options={{ gestureEnabled: false }} />
           <Stack.Screen name="analyzing" options={{ gestureEnabled: false }} />
           <Stack.Screen name="result" />
           <Stack.Screen name="personalization" />

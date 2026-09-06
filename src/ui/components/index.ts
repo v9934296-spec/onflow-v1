@@ -4,6 +4,7 @@ export { OnFlowHeader } from "./OnFlowHeader";
 export { OnFlowDivider } from "./OnFlowDivider";
 export { OnFlowMeta, MetaTag } from "./OnFlowMeta";
 export { FootageFrame, FootageThumbnail } from "./Footage";
+export { FootagePlayer } from "./FootagePlayer";
 export { TrickSlate } from "./TrickSlate";
 export { SessionClock } from "./SessionClock";
 export { TrickTallyRow, AttemptLogRow } from "./AttemptLog";

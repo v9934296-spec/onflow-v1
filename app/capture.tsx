@@ -18,9 +18,8 @@ import { CameraScrims } from "@/ui/components/CameraScrims";
 import { AsphaltSurface } from "@/ui/components/AsphaltSurface";
 import { ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { useSessionStore } from "@/store/sessionStore";
-import { enqueueClip } from "@/store/enqueueClip";
 import { compressionContract } from "@/domain/compression";
-import { mimeFromUri } from "@/domain/tricks";
+import { reviewHref, type MediaKind } from "@/domain/media";
 import type { ErrorKind } from "@/ui/copy/errors";
 
 const LOW_STORAGE_BYTES = 200 * 1024 * 1024;
@@ -65,7 +64,13 @@ export default function CaptureScreen() {
     return () => clearInterval(timer);
   }, [recording]);
 
-  async function finish(uri: string, durationSeconds: number, mediaKind: "recorded" | "imported") {
+  /**
+   * Ceilings are checked here, before review: there is no point watching a
+   * clip the server would reject. A clip that passes goes to review, where
+   * the skater decides whether to keep it. Nothing uploads from this screen.
+   */
+  async function finish(uri: string, durationSeconds: number, mediaKind: MediaKind) {
+    const capturedAt = new Date().toISOString();
     const info = await FileSystem.getInfoAsync(uri);
     const sizeBytes = info.exists && "size" in info && typeof info.size === "number" ? info.size : 1;
     if (sizeBytes > compressionContract.maxBytes * 0.8) setLargeFile(true);
@@ -77,16 +82,7 @@ export default function CaptureScreen() {
       setError("clip_too_long");
       return;
     }
-    const localId = await enqueueClip({
-      uri,
-      durationSeconds,
-      sizeBytes,
-      mimeType: mimeFromUri(uri),
-      mediaKind,
-      capturedAt: new Date().toISOString(),
-    });
-    if (localId) router.replace(`/analyzing?localId=${localId}`);
-    else setError("clip_too_long");
+    router.replace(reviewHref({ uri, durationSeconds, sizeBytes, mediaKind, capturedAt }));
   }
 
   if (error) {
@@ -253,7 +249,7 @@ function formatElapsed(seconds: number): string {
 }
 
 async function pickLibrary(
-  finish: (uri: string, durationSeconds: number, kind: "recorded" | "imported") => Promise<void>,
+  finish: (uri: string, durationSeconds: number, kind: MediaKind) => Promise<void>,
   setError: (kind: ErrorKind) => void,
 ) {
   const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"] });
