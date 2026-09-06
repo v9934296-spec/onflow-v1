@@ -33,3 +33,6 @@ ios/DerivedData/
 coverage/
 .tmp-boundary-check/
 repomix-output.xml
+
+# Local PostgreSQL client binaries
+pgsql/

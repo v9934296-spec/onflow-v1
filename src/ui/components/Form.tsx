@@ -8,12 +8,20 @@ export function TextField({
   placeholder,
   accessibilityLabel,
   editable = true,
+  autoCorrect = true,
+  autoCapitalize = "sentences",
+  returnKeyType,
+  onSubmitEditing,
 }: {
   value: string;
   onChangeText: (next: string) => void;
   placeholder?: string;
   accessibilityLabel?: string;
   editable?: boolean;
+  autoCorrect?: boolean;
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
+  returnKeyType?: "done" | "search" | "go" | "next" | "send";
+  onSubmitEditing?: () => void;
 }) {
   return (
     <TextInput
@@ -23,6 +31,11 @@ export function TextField({
       placeholderTextColor={color.textTertiary}
       accessibilityLabel={accessibilityLabel ?? placeholder}
       editable={editable}
+      autoCorrect={autoCorrect}
+      autoCapitalize={autoCapitalize}
+      returnKeyType={returnKeyType}
+      onSubmitEditing={onSubmitEditing}
+      blurOnSubmit
       style={{
         ...textStyle.body,
         color: color.textPrimary,

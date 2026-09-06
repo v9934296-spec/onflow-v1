@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { AppState, Text } from "react-native";
+import { AppState, ScrollView, Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { color, space, textStyle } from "@/ui/tokens";
 import { Button } from "@/ui/components/Button";
@@ -8,16 +9,21 @@ import { UploadProgress } from "@/ui/components/UploadProgress";
 import { ErrorPanel } from "@/ui/components/States";
 import { AsphaltSurface } from "@/ui/components/AsphaltSurface";
 import { ScreenHeader, ScreenSafeArea } from "@/ui/components/ScreenChrome";
+import { PteLiveCard } from "@/ui/components/PteLiveCard";
+import { TRANSPARENT_OVER_ASPHALT } from "@/ui/components/engineMarks";
 import { getOutbox } from "@/store/outbox";
 import { pollJob, runOutboxRow } from "@/store/upload";
 import { queryClient } from "@/store/queryClient";
+import { useSessionStore } from "@/store/sessionStore";
 import { analyzingFailureKind, analyzingPhase, isTerminal, progressFraction } from "@/domain/outbox";
+import { formatTrickLabel } from "@/domain/tricks";
 import type { AnalysisResult, OutboxRow } from "@/domain/models";
 import { asErrorKind, type ErrorKind } from "@/ui/copy/errors";
 
 export default function AnalyzingScreen() {
   const { localId } = useLocalSearchParams<{ localId: string }>();
   const router = useRouter();
+  const trick = useSessionStore((s) => s.trick);
   const [row, setRow] = useState<OutboxRow | null>(null);
   const [job, setJob] = useState<AnalysisResult | null>(null);
   const [slow, setSlow] = useState(false);
@@ -119,6 +125,9 @@ export default function AnalyzingScreen() {
   const failureKind: ErrorKind = asErrorKind(
     analyzingFailureKind(row?.errorKind ?? null, job?.failureReason ?? null),
   );
+  const trickLabel = trick
+    ? formatTrickLabel(trick)
+    : job?.calledTrick ?? null;
 
   function onFailurePrimary() {
     if (
@@ -162,19 +171,25 @@ export default function AnalyzingScreen() {
 
   return (
     <AsphaltSurface>
-      <ScreenSafeArea style={{ padding: space.xxl, justifyContent: "center", gap: space.lg }}>
-        <ScreenHeader kicker="Queue" title={phase} />
-        <StageList phase={phase} />
-        {phase === "UPLOADING" ? <UploadProgress fraction={fraction} /> : null}
-        {phase !== "UPLOADING" ? (
-          <Text style={{ ...textStyle.body, color: color.textSecondary }}>
-            {slow
-              ? "Still reviewing. You can keep filming — this'll be in your History when it's done."
-              : "Reviewing the clip you called. This is not trick detection."}
-          </Text>
-        ) : null}
-        <Button label="Keep filming" variant="secondary" onPress={() => router.replace("/capture")} />
-      </ScreenSafeArea>
+      <SafeAreaView edges={["top"]} style={[{ flex: 1 }, TRANSPARENT_OVER_ASPHALT]}>
+        <ScrollView
+          style={{ flex: 1, backgroundColor: "transparent" }}
+          contentContainerStyle={{ padding: space.xxl, justifyContent: "center", gap: space.lg, flexGrow: 1 }}
+        >
+          <ScreenHeader kicker="P.T.E." title={phase} />
+          <PteLiveCard trickLabel={trickLabel} phase={phase} active />
+          <StageList phase={phase} />
+          {phase === "UPLOADING" ? <UploadProgress fraction={fraction} /> : null}
+          {phase !== "UPLOADING" ? (
+            <Text style={{ ...textStyle.body, color: color.textSecondary }}>
+              {slow
+                ? "Still reviewing. You can keep filming — this'll be in your History when it's done."
+                : "Reviewing the clip you called."}
+            </Text>
+          ) : null}
+          <Button label="Keep filming" variant="secondary" onPress={() => router.replace("/capture")} />
+        </ScrollView>
+      </SafeAreaView>
     </AsphaltSurface>
   );
 }

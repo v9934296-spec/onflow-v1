@@ -9,9 +9,12 @@ import {
   nextRetryAt,
   toCatalogErrorKind,
 } from "../domain/outbox";
-import { clipExceedsLaunchCeiling, compressionContract } from "../domain/compression";
+import { clipExceedsLaunchCeiling } from "../domain/compression";
+import { initiatePixelSize } from "../domain/prepareClip";
 import { getOutbox, listRecoverable, upsertOutbox } from "./outbox";
+import { discardWorkspaceCopy } from "./prepareClip";
 import { mintClipId } from "../domain/mappers/ids";
+import { useSessionStore } from "./sessionStore";
 
 const inFlight = new Set<string>();
 
@@ -98,14 +101,16 @@ async function initiatePipeline(existing: OutboxRow): Promise<OutboxRow> {
   let row: OutboxRow = { ...existing, state: "presigning", errorKind: null };
   await upsertOutbox(row);
 
+  const pixels = initiatePixelSize(row);
   const initiated = await initiateUpload({
     sessionId: row.sessionId ?? undefined,
     durationSeconds: row.durationSeconds,
-    widthPx: compressionContract.longEdgePx,
-    heightPx: compressionContract.longEdgePx,
+    widthPx: pixels.widthPx,
+    heightPx: pixels.heightPx,
     contentType: row.mimeType,
     sizeBytes: row.sizeBytes,
     capturedAt: row.capturedAt,
+    clientHintTrickId: useSessionStore.getState().trick?.trickId,
   });
   if (!initiated.ok) {
     row = applyHttpFailure(row, initiated.error, "upload_failed_retryable");
@@ -167,6 +172,7 @@ async function settleJob(row: OutboxRow): Promise<OutboxRow> {
   if (polled.data.status === "completed") {
     const next: OutboxRow = { ...row, state: "ready", errorKind: null };
     await upsertOutbox(next);
+    await discardWorkspaceCopy(row.localUri, row.mediaKind);
     return next;
   }
   if (polled.data.status === "failed") {

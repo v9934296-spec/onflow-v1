@@ -3,6 +3,7 @@ import { unsafeBrand } from "../types/brand";
 import type { Score } from "../models";
 import {
   groupScoredClipsByTrick,
+  historyPhaseLabel,
   mapTimelineSession,
   mergeHistoryClips,
 } from "../history";
@@ -190,6 +191,14 @@ describe("history relationships and comparability", () => {
     ]);
     expect(groups[0]?.rows.map((row) => row.id)).toEqual(["new", "old"]);
     expect(groups[0]?.rows.every((row) => row.score != null)).toBe(true);
+  });
+
+  it("maps history merge keys onto the same named P.T.E. phases", () => {
+    expect(historyPhaseLabel("uploading")).toBe("UPLOADING");
+    expect(historyPhaseLabel("analyzing")).toBe("REVIEWING CLIP");
+    expect(historyPhaseLabel("queued")).toBe("QUEUED");
+    expect(historyPhaseLabel("ready")).toBe("READY");
+    expect(historyPhaseLabel("failed")).toBe("FAILED");
   });
 
   it("keeps manual outcomes as the attempt record without folding in engine scores", () => {

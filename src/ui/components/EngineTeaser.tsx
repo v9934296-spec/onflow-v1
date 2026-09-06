@@ -2,11 +2,17 @@ import { Pressable, Text, View } from "react-native";
 import { color, radius, space, textStyle, touchTarget } from "../tokens";
 import { AsphaltBackdrop } from "./AsphaltSurface";
 
-export function EngineTeaser({ onPress }: { onPress: () => void }) {
+export function EngineTeaser({
+  onPress,
+  phase,
+}: {
+  onPress: () => void;
+  phase?: string | null;
+}) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="P.T.E. engine"
+      accessibilityLabel={phase ? `P.T.E. engine, ${phase}` : "P.T.E. engine"}
       onPress={onPress}
       style={{
         minHeight: touchTarget.minimum,
@@ -43,7 +49,7 @@ export function EngineTeaser({ onPress }: { onPress: () => void }) {
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ ...textStyle.h2, color: color.textPrimary }}>P.T.E. ENGINE</Text>
           <Text style={{ ...textStyle.bodySm, color: color.textSecondary }}>
-            You call it. The engine reads it.
+            {phase ? phase : "You call it. The engine reads it."}
           </Text>
         </View>
         <Text style={{ ...textStyle.label, color: color.neon }}>Open</Text>

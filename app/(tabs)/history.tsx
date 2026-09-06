@@ -4,13 +4,12 @@ import { EmptyState, OfflineBadge, Skeleton } from "@/ui/components/States";
 import { StateTag } from "@/ui/components/StateTag";
 import { Chip } from "@/ui/components/Chip";
 import { RailMark, ScreenHero, ScreenSafeArea } from "@/ui/components/ScreenChrome";
-import { TickRuler } from "@/ui/components/Marks";
 import { useAuthStore } from "@/store/authStore";
 import { loadHistory, loadSessionAttemptList } from "@/store/history";
-import { compressionContract } from "@/domain/compression";
 import { resumeHref } from "@/domain/outbox";
 import {
   groupScoredClipsByTrick,
+  historyPhaseLabel,
   type HistoryClipItem,
   type HistorySessionItem,
   type HistoryTab,
@@ -109,7 +108,11 @@ export default function HistoryScreen() {
                 }}
               >
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <StateTag tone={tagTone(row.state)}>{row.unread ? `unread · ${row.state}` : row.state}</StateTag>
+                  <StateTag tone={tagTone(row.state)}>
+                    {row.unread
+                      ? `unread · ${historyPhaseLabel(row.state)}`
+                      : historyPhaseLabel(row.state)}
+                  </StateTag>
                   {row.durationSeconds != null ? (
                     <Text style={{ ...textStyle.mono, color: color.alum }}>
                       {`${Math.round(row.durationSeconds)}s`}
@@ -129,9 +132,6 @@ export default function HistoryScreen() {
                     {row.score}
                     {row.providerModel ? ` · ${row.providerModel}` : ""}
                   </Text>
-                ) : null}
-                {row.durationSeconds != null ? (
-                  <TickRuler progress={row.durationSeconds / compressionContract.maxDurationSeconds} />
                 ) : null}
               </Pressable>
             ))
@@ -206,7 +206,7 @@ function EmptyHistory() {
       </View>
       <EmptyState
         title="No clips yet"
-        body="Filmed attempts show up here with their real state — queued, uploading, analyzing, ready, or failed."
+        body="Filmed attempts show up here with their real state — queued, uploading, reviewing clip, ready, or failed."
       />
     </View>
   );

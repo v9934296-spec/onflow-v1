@@ -110,6 +110,9 @@ export interface OutboxRow {
   readonly durationSeconds: number;
   readonly sizeBytes: number;
   readonly capturedAt: string;
+  /** Present only when the picker or a probe measured the file. Absent is not 1080. */
+  readonly widthPx?: number | null;
+  readonly heightPx?: number | null;
   readonly bytesUploaded: number | null;
   readonly attemptCount: number;
   readonly nextRetryAt: string | null;

@@ -9,6 +9,7 @@
     "android": "expo start --android",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:phase13": "vitest run src/domain/__tests__/phase13.matrix.test.ts src/domain/__tests__/compression.test.ts src/domain/__tests__/outbox.test.ts src/domain/__tests__/history.test.ts src/domain/mappers/__tests__/truth.test.ts src/domain/__tests__/saveConfirmation.test.ts src/ui/copy/__tests__/errors.test.ts src/ui/tokens/__tests__/touchTarget.test.ts",
     "test:watch": "vitest",
     "lint": "eslint .",
     "verify:boundaries": "node scripts/verify-boundaries.mjs",

@@ -2,26 +2,23 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { color, radius, space, textStyle, touchTarget } from "@/ui/tokens";
+import { color, space, textStyle, touchTarget } from "@/ui/tokens";
 import { Button } from "@/ui/components/Button";
 import { AsphaltBackdrop } from "@/ui/components/AsphaltSurface";
-import { EngineCore, TickRuler } from "@/ui/components/Marks";
-import { EngineRing } from "@/ui/components/EngineRing";
+import { PteLiveCard } from "@/ui/components/PteLiveCard";
 import { TRANSPARENT_OVER_ASPHALT } from "@/ui/components/engineMarks";
-import { analyzingPhase } from "@/domain/outbox";
+import { analyzingPhase, isTerminal, resumeHref } from "@/domain/outbox";
 import { formatTrickLabel } from "@/domain/tricks";
 import { useSessionStore } from "@/store/sessionStore";
 import { useAuthStore } from "@/store/authStore";
 import { listOutboxForUser, listRecoverable } from "@/store/outbox";
 import type { OutboxRow } from "@/domain/models";
 
-const DIMENSIONS = ["Pop", "Flick", "Landing", "Style"] as const;
-
 const PIPELINE = [
   { id: "call", label: "Call", copy: "You name the trick. The engine never guesses it." },
   { id: "film", label: "Film", copy: "A single attempt, 30 seconds or under." },
-  { id: "queue", label: "Queue", copy: "The clip stays on-device until the job is real." },
-  { id: "read", label: "Read", copy: "One readiness. Notes only if the engine wrote them." },
+  { id: "read", label: "P.T.E.", copy: "Upload and review use the same live job — no empty instruments." },
+  { id: "save", label: "Save", copy: "One readiness. Notes only if the engine wrote them." },
 ] as const;
 
 export default function EngineScreen() {
@@ -43,7 +40,11 @@ export default function EngineScreen() {
     }, [userId]),
   );
 
-  const phase = latest ? analyzingPhase(latest.state, null) : null;
+  const live = latest && !isTerminal(latest) ? latest : null;
+  const phase = live ? analyzingPhase(live.state, null) : null;
+  const trickLabel = trick
+    ? formatTrickLabel(trick)
+    : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: color.bg, overflow: "hidden" }}>
@@ -72,9 +73,9 @@ export default function EngineScreen() {
                   textTransform: "uppercase",
                 }}
               >
-                Engine
+                P.T.E.
               </Text>
-              <Text style={{ ...textStyle.hero, color: color.textPrimary }}>P.T.E.</Text>
+              <Text style={{ ...textStyle.hero, color: color.textPrimary }}>ENGINE</Text>
             </View>
             <Pressable
               accessibilityRole="button"
@@ -86,66 +87,8 @@ export default function EngineScreen() {
             </Pressable>
           </View>
 
-          <View
-            style={{
-              marginHorizontal: space.xl,
-              marginTop: space.lg,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: space.lg,
-              borderRadius: radius.lg,
-              borderWidth: 1,
-              borderColor: color.hairline,
-              backgroundColor: "rgba(26,26,26,0.8)",
-              padding: space.lg,
-            }}
-          >
-            <EngineCore active={queued > 0} size={80} />
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ ...textStyle.label, color: color.textPrimary }}>
-                You call the trick. The engine reviews the attempt.
-              </Text>
-              <Text style={{ ...textStyle.bodySm, color: color.textSecondary, marginTop: 4 }}>
-                {trick
-                  ? `Armed for ${formatTrickLabel(trick)}.`
-                  : "No trick armed. P.T.E. does not detect tricks from video."}
-              </Text>
-              <Text
-                style={{
-                  ...textStyle.mono,
-                  marginTop: space.sm,
-                  textTransform: "uppercase",
-                  letterSpacing: 1,
-                  color: color.alum,
-                }}
-              >
-                {phase ? `Job ${phase}` : "Idle — no job"}
-              </Text>
-            </View>
-          </View>
-
-          <View style={{ marginHorizontal: space.xl, marginTop: space.xl }}>
-            <Text
-              style={{
-                ...textStyle.label,
-                fontSize: 11,
-                letterSpacing: 1.4,
-                color: color.textTertiary,
-                textTransform: "uppercase",
-              }}
-            >
-              Instruments
-            </Text>
-            <Text style={{ ...textStyle.bodySm, color: color.textSecondary, marginTop: 4, maxWidth: 320 }}>
-              Pop, Flick, Landing, Style only light up when the engine returns a score. Empty is empty — never zero.
-            </Text>
-            <View style={{ marginTop: space.xl, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-around", rowGap: space.xl }}>
-              {DIMENSIONS.map((label) => (
-                <View key={label} style={{ width: "46%" }}>
-                  <EngineRing label={label} score={null} />
-                </View>
-              ))}
-            </View>
+          <View style={{ marginHorizontal: space.xl, marginTop: space.lg }}>
+            <PteLiveCard trickLabel={trickLabel} phase={phase} active={queued > 0} />
           </View>
 
           <View style={{ marginHorizontal: space.xl, marginTop: space.xxl }}>
@@ -158,29 +101,7 @@ export default function EngineScreen() {
                 textTransform: "uppercase",
               }}
             >
-              Readiness
-            </Text>
-            <View style={{ marginTop: space.md, flexDirection: "row", gap: space.sm }}>
-              <ReadyChip label="Usable" tint={color.neon} />
-              <ReadyChip label="Limited" tint={color.amber} />
-              <ReadyChip label="Insufficient" tint={color.alum} />
-            </View>
-            <Text style={{ ...textStyle.bodySm, color: color.textSecondary, marginTop: space.md }}>
-              One banner for the whole clip. No per-row evidence tags. Color is never the only indicator.
-            </Text>
-          </View>
-
-          <View style={{ marginHorizontal: space.xl, marginTop: space.xxl }}>
-            <Text
-              style={{
-                ...textStyle.label,
-                fontSize: 11,
-                letterSpacing: 1.4,
-                color: color.textTertiary,
-                textTransform: "uppercase",
-              }}
-            >
-              Pipeline
+              Loop
             </Text>
             {PIPELINE.map((step, index) => (
               <View key={step.id} style={{ flexDirection: "row", gap: space.md, marginTop: index === 0 ? space.md : 0 }}>
@@ -211,60 +132,31 @@ export default function EngineScreen() {
           </View>
 
           <View style={{ marginHorizontal: space.xl, marginTop: space.sm }}>
-            <TickRuler progress={queued > 0 ? 0.35 : 0} />
             <Text
               style={{
                 ...textStyle.mono,
-                marginTop: space.sm,
                 textTransform: "uppercase",
                 letterSpacing: 1,
                 color: color.textTertiary,
               }}
             >
-              No averages. No cross-engine comparison.
+              No averages. No ratings. No empty rings.
             </Text>
           </View>
 
           <View style={{ marginHorizontal: space.xl, marginTop: space.xl, gap: space.md }}>
-            <Button
-              label={trick ? "Film an attempt" : "Choose a trick"}
-              onPress={() => router.push(trick ? "/capture" : "/trick")}
-            />
+            {live ? (
+              <Button label="Open job" onPress={() => router.push(resumeHref(live.localId))} />
+            ) : (
+              <Button
+                label={trick ? "Film an attempt" : "Choose a trick"}
+                onPress={() => router.push(trick ? "/capture" : "/trick")}
+              />
+            )}
             <Button label="Home" variant="secondary" onPress={() => router.replace("/")} />
           </View>
         </ScrollView>
       </SafeAreaView>
-    </View>
-  );
-}
-
-function ReadyChip({ label, tint }: { label: string; tint: string }) {
-  return (
-    <View
-      style={{
-        flex: 1,
-        minHeight: touchTarget.minimum,
-        borderRadius: radius.md,
-        borderWidth: 1,
-        borderColor: tint,
-        backgroundColor: color.surface,
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: space.sm,
-        paddingVertical: space.md,
-      }}
-    >
-      <Text
-        style={{
-          ...textStyle.label,
-          fontSize: 11,
-          letterSpacing: 1,
-          color: tint,
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </Text>
     </View>
   );
 }

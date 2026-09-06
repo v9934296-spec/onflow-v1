@@ -12,8 +12,10 @@ export async function enqueueClip(input: {
   durationSeconds: number;
   sizeBytes: number;
   mimeType: "video/mp4" | "video/quicktime";
-  mediaKind: "recorded" | "imported";
+  mediaKind: "recorded" | "imported" | "derivative";
   capturedAt: string;
+  widthPx?: number | null;
+  heightPx?: number | null;
 }): Promise<LocalId | null> {
   const userId = useAuthStore.getState().userId;
   if (!userId) return null;
@@ -33,6 +35,8 @@ export async function enqueueClip(input: {
     durationSeconds: input.durationSeconds,
     sizeBytes: input.sizeBytes,
     capturedAt: input.capturedAt,
+    widthPx: input.widthPx ?? null,
+    heightPx: input.heightPx ?? null,
     bytesUploaded: null,
     attemptCount: 0,
     nextRetryAt: null,

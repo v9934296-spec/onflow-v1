@@ -17,8 +17,9 @@ import { AsphaltSurface } from "@/ui/components/AsphaltSurface";
 import { ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { useSessionStore } from "@/store/sessionStore";
 import { enqueueClip } from "@/store/enqueueClip";
+import { prepareClipForUpload } from "@/store/prepareClip";
 import { compressionContract } from "@/domain/compression";
-import { mimeFromUri } from "@/domain/tricks";
+import { formatTrickLabel } from "@/domain/tricks";
 import type { ErrorKind } from "@/ui/copy/errors";
 
 const LOW_STORAGE_BYTES = 200 * 1024 * 1024;
@@ -51,25 +52,33 @@ export default function CaptureScreen() {
     return () => clearInterval(timer);
   }, [recording]);
 
-  async function finish(uri: string, durationSeconds: number, mediaKind: "recorded" | "imported") {
-    const info = await FileSystem.getInfoAsync(uri);
-    const sizeBytes = info.exists && "size" in info && typeof info.size === "number" ? info.size : 1;
-    if (sizeBytes > compressionContract.maxBytes * 0.8) setLargeFile(true);
-    if (sizeBytes > compressionContract.maxBytes) {
-      setError("clip_too_large");
-      return;
-    }
-    if (durationSeconds > compressionContract.maxDurationSeconds) {
-      setError("clip_too_long");
-      return;
-    }
-    const localId = await enqueueClip({
+  async function finish(
+    uri: string,
+    durationSeconds: number,
+    mediaKind: "recorded" | "imported",
+    pixels?: { widthPx?: number | null; heightPx?: number | null },
+  ) {
+    const prepared = await prepareClipForUpload({
       uri,
       durationSeconds,
-      sizeBytes,
-      mimeType: mimeFromUri(uri),
       mediaKind,
+      widthPx: pixels?.widthPx,
+      heightPx: pixels?.heightPx,
+    });
+    if ("error" in prepared) {
+      setError(prepared.error);
+      return;
+    }
+    if (prepared.sizeBytes > compressionContract.maxBytes * 0.8) setLargeFile(true);
+    const localId = await enqueueClip({
+      uri: prepared.uri,
+      durationSeconds,
+      sizeBytes: prepared.sizeBytes,
+      mimeType: prepared.mimeType,
+      mediaKind: prepared.mediaKind,
       capturedAt: new Date().toISOString(),
+      widthPx: prepared.widthPx,
+      heightPx: prepared.heightPx,
     });
     if (localId) router.replace(`/analyzing?localId=${localId}`);
     else setError("clip_too_long");
@@ -149,13 +158,8 @@ export default function CaptureScreen() {
           }}
         >
           <Text {...overlayScale} style={{ ...textStyle.h2, color: color.textPrimary }}>
-            {trick?.canonicalName ?? "No trick"}
+            {trick ? formatTrickLabel(trick) : "No trick"}
           </Text>
-          {trick?.stance || trick?.direction ? (
-            <Text {...overlayScale} style={{ ...textStyle.mono, color: color.textPrimary }}>
-              {[trick.stance, trick.direction].filter(Boolean).join(" · ")}
-            </Text>
-          ) : null}
           <Text
             accessibilityLabel={`Elapsed ${Math.floor(elapsed)} seconds of ${compressionContract.maxDurationSeconds}`}
             style={{ ...textStyle.mono, color: color.textPrimary }}
@@ -226,7 +230,12 @@ function formatElapsed(seconds: number): string {
 }
 
 async function pickLibrary(
-  finish: (uri: string, durationSeconds: number, kind: "recorded" | "imported") => Promise<void>,
+  finish: (
+    uri: string,
+    durationSeconds: number,
+    kind: "recorded" | "imported",
+    pixels?: { widthPx?: number | null; heightPx?: number | null },
+  ) => Promise<void>,
   setError: (kind: ErrorKind) => void,
 ) {
   const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"] });
@@ -237,5 +246,8 @@ async function pickLibrary(
     setError("clip_too_long");
     return;
   }
-  await finish(asset.uri, duration, "imported");
+  await finish(asset.uri, duration, "imported", {
+    widthPx: asset.width > 0 ? asset.width : null,
+    heightPx: asset.height > 0 ? asset.height : null,
+  });
 }

@@ -1,4 +1,4 @@
-import { ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { color, radius, space, textStyle } from "@/ui/tokens";
 import { EmptyState, OfflineBadge, QueuedBadge, Skeleton } from "@/ui/components/States";
 import { Button } from "@/ui/components/Button";
@@ -14,6 +14,7 @@ import { kv, kvKeys } from "@/store/kv";
 import { useAuthStore } from "@/store/authStore";
 import { listOutboxForUser, listRecoverable } from "@/store/outbox";
 import { loadTrickCatalog, readRecentTrickIds } from "@/store/tricks";
+import { analyzingPhase, isTerminal, resumeHref } from "@/domain/outbox";
 import type { CatalogTrick, OutboxRow } from "@/domain/models";
 
 export default function HomeScreen() {
@@ -62,6 +63,8 @@ export default function HomeScreen() {
   }
 
   const returning = Boolean(kv.get(kvKeys.onboardingDone) || latest);
+  const liveJob = latest && !isTerminal(latest) ? latest : null;
+  const livePhase = liveJob ? analyzingPhase(liveJob.state, null) : null;
   const cards: ReactNode[] = [];
 
   if (session) {
@@ -121,13 +124,23 @@ export default function HomeScreen() {
   }
 
   if (latest) {
+    const latestHref =
+      latest.state === "ready" && latest.clipId
+        ? { pathname: "/result" as const, params: { clipId: latest.clipId, localId: latest.localId } }
+        : resumeHref(latest.localId);
     cards.push(
-      <View key="latest" style={{ gap: space.sm }}>
+      <Pressable
+        key="latest"
+        accessibilityRole="button"
+        accessibilityLabel={`Latest clip, ${analyzingPhase(latest.state, null)}`}
+        onPress={() => router.push(latestHref)}
+        style={{ gap: space.sm }}
+      >
         <Text style={{ ...textStyle.label, color: color.textSecondary }}>Latest clip</Text>
         <QueuedBadge count={queued} />
         {returning ? <VideoThumbnail uri={stillFrameUri(latest.localUri)} /> : null}
-        <Text style={{ ...textStyle.mono, color: color.alum }}>{latest.state.toUpperCase()}</Text>
-      </View>,
+        <Text style={{ ...textStyle.mono, color: color.alum }}>{analyzingPhase(latest.state, null)}</Text>
+      </Pressable>,
     );
   }
 
@@ -138,19 +151,22 @@ export default function HomeScreen() {
         contentContainerStyle={{ padding: space.xl, gap: space.lg }}
       >
         {offline ? <OfflineBadge queued={queued} /> : null}
-        <ScreenHero kicker="Skate" title="ONFLOW">
+        <ScreenHero kicker="Home" title="ONFLOW">
           <Text style={{ ...textStyle.body, color: color.textSecondary }}>
             {returning
               ? trick
                 ? `Ready to film ${trick.canonicalName}.`
-                : "Film an attempt. Get an honest read. Record what actually happened."
-              : "Film an attempt. Get an honest read. Record what actually happened. Try again."}
+                : "Call. Film. P.T.E. Read. Save."
+              : "Call. Film. P.T.E. Read. Save."}
           </Text>
           <View style={{ height: 56, marginTop: space.sm }}>
             <DeckMark />
           </View>
         </ScreenHero>
-        <EngineTeaser onPress={() => router.push("/engine")} />
+        <EngineTeaser
+          phase={livePhase}
+          onPress={() => router.push(liveJob ? resumeHref(liveJob.localId) : "/engine")}
+        />
         {cards.slice(0, 4)}
       </ScrollView>
     </ScreenSafeArea>

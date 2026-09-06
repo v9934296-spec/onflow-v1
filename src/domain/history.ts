@@ -63,6 +63,16 @@ export function outboxStateLabel(state: OutboxState): string {
   return "queued";
 }
 
+/** Same named phases as Analyzing / P.T.E. Display only — merge keys stay lowercase. */
+export function historyPhaseLabel(state: string): string {
+  if (state === "uploading") return "UPLOADING";
+  if (state === "analyzing") return "REVIEWING CLIP";
+  if (state === "ready") return "READY";
+  if (state === "failed") return "FAILED";
+  if (state === "cancelled") return "CANCELLED";
+  return "QUEUED";
+}
+
 /** Timeline `best_pte_score` is never copied onto the History view model (§11.4). */
 export function mapTimelineSession(input: {
   session_id: string;

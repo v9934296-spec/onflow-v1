@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { color, space, textStyle } from "@/ui/tokens";
 import { Button } from "@/ui/components/Button";
@@ -74,12 +74,20 @@ export default function TrickScreen() {
 
   return (
     <ScreenSafeArea style={{ padding: space.xl, gap: space.md }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
       <ScreenHeader kicker="Call" title="CHOOSE TRICK" />
       <TextField
         value={query}
         onChangeText={setQuery}
         placeholder="Search"
         accessibilityLabel="Search tricks"
+        autoCorrect={false}
+        autoCapitalize="none"
+        returnKeyType="search"
+        onSubmitEditing={() => Keyboard.dismiss()}
       />
       <ScrollView horizontal style={{ flexGrow: 0 }} contentContainerStyle={{ gap: space.sm }}>
         <FilterPill label="All" selected={category == null} onPress={() => setCategory(null)} />
@@ -167,11 +175,13 @@ export default function TrickScreen() {
         disabled={!picked}
         onPress={() => {
           if (!picked) return;
+          Keyboard.dismiss();
           useSessionStore.getState().setTrick(selectCatalogTrick(picked, { stance, direction }));
           rememberConfirmedTrick(picked.trickId);
           router.replace("/capture");
         }}
       />
+      </KeyboardAvoidingView>
     </ScreenSafeArea>
   );
 }
