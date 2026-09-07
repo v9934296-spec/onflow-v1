@@ -1,5 +1,6 @@
 export { Button } from "./Button";
 export { OnFlowButton } from "./OnFlowButton";
+export { pressFeedback, REDUCED_MOTION_PRESS_OPACITY } from "./pressFeedback";
 export { OnFlowHeader } from "./OnFlowHeader";
 export { OnFlowDivider } from "./OnFlowDivider";
 export { OnFlowMeta, MetaTag } from "./OnFlowMeta";

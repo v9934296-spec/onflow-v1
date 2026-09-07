@@ -1,7 +1,9 @@
 import { ActivityIndicator, Pressable, Text } from "react-native";
 import type { CenterAction } from "@/domain/centerAction";
-import { border, color, PRESS_SCALE_HARD, textStyle, touchTarget } from "../tokens";
+import { border, color, textStyle, touchTarget } from "../tokens";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 import { centerActionLines } from "./centerActionLabel";
+import { pressFeedback } from "./pressFeedback";
 
 /**
  * The tab bar's context action. Dominant through size and solid volt fill —
@@ -14,6 +16,7 @@ export function CenterActionButton({
   action: CenterAction;
   onPress: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
   const hydrating = action === "HYDRATING";
   const lines = centerActionLines(action);
   const stacked = lines.length > 1;
@@ -25,22 +28,29 @@ export function CenterActionButton({
       accessibilityState={{ disabled: hydrating, busy: hydrating }}
       disabled={hydrating}
       onPress={onPress}
-      style={({ pressed }) => ({
-        width: touchTarget.captureControl,
-        height: touchTarget.captureControl,
-        minWidth: touchTarget.minimum,
-        minHeight: touchTarget.minimum,
-        marginTop: -18,
-        borderRadius: 999,
-        borderWidth: border.rule * 2,
-        borderColor: color.bg,
-        backgroundColor: color.neon,
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: 8,
-        opacity: hydrating ? 0.7 : 1,
-        transform: [{ scale: pressed && !hydrating ? PRESS_SCALE_HARD : 1 }],
-      })}
+      style={({ pressed }) => {
+        const feedback = pressFeedback({
+          pressed: pressed && !hydrating,
+          reduceMotion,
+          hard: true,
+        });
+        return {
+          width: touchTarget.captureControl,
+          height: touchTarget.captureControl,
+          minWidth: touchTarget.minimum,
+          minHeight: touchTarget.minimum,
+          marginTop: -18,
+          borderRadius: 999,
+          borderWidth: border.rule * 2,
+          borderColor: color.bg,
+          backgroundColor: color.neon,
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: 8,
+          opacity: hydrating ? 0.7 : feedback.opacity,
+          transform: [{ scale: feedback.scale }],
+        };
+      }}
     >
       {hydrating ? (
         <ActivityIndicator color={color.bg} />

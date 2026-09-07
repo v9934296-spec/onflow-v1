@@ -8,28 +8,23 @@ import {
   type ViewStyle,
 } from "react-native";
 import * as Haptics from "expo-haptics";
-import {
-  border,
-  color,
-  motionMs,
-  PRESS_SCALE,
-  PRESS_SCALE_HARD,
-  radius,
-  textStyle,
-  touchTarget,
-} from "../tokens";
+import { border, color, radius, textStyle, touchTarget } from "../tokens";
+import { useReducedMotion } from "../hooks/useReducedMotion";
+import { pressFeedback } from "./pressFeedback";
 
 /** `quiet` is a text action in alum — for leaving, ending, dismissing. Not red: ending a session is not an error. */
 type Variant = "primary" | "secondary" | "ghost" | "quiet" | "destructive";
 type Size = "hero" | "primary" | "compact";
 
 /**
- * The product's button. Three sizes, four variants, one motion.
+ * The product's button. Three sizes, five variants, one motion.
  *
  * `hero` is the physical control — FILM, START SESSION — set in display type
  * at capture-control height and compressed harder on press. `primary` is the
  * ordinary confirming action. `compact` is for secondary rows and toolbars.
- * Press compression is timed to `motionMs.press` on the native driver.
+ *
+ * Under Reduce Motion the compression becomes an instant opacity step: the
+ * control still answers the touch, it just doesn't move (spec §10.3).
  */
 export function OnFlowButton({
   label,
@@ -52,16 +47,27 @@ export function OnFlowButton({
   style?: ViewStyle;
   onPress?: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
   const scale = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
   const blocked = Boolean(disabled) || loading;
   const hard = size === "hero";
 
-  const compress = (to: number) =>
-    Animated.timing(scale, {
-      toValue: to,
-      duration: motionMs.press,
-      useNativeDriver: true,
-    }).start();
+  const applyPress = (pressed: boolean) => {
+    const next = pressFeedback({ pressed, reduceMotion, hard });
+    Animated.parallel([
+      Animated.timing(scale, {
+        toValue: next.scale,
+        duration: next.durationMs,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: next.opacity,
+        duration: next.durationMs,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   const background =
     variant === "primary"
@@ -85,14 +91,14 @@ export function OnFlowButton({
         : touchTarget.minimum;
 
   return (
-    <Animated.View style={[{ transform: [{ scale }] }, style]}>
+    <Animated.View style={[{ transform: [{ scale }], opacity }, style]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityState={{ disabled: blocked, busy: loading }}
         disabled={blocked}
-        onPressIn={() => compress(hard ? PRESS_SCALE_HARD : PRESS_SCALE)}
-        onPressOut={() => compress(1)}
+        onPressIn={() => applyPress(true)}
+        onPressOut={() => applyPress(false)}
         onPress={() => {
           if (haptic) void Haptics.selectionAsync().catch(() => undefined);
           onPress?.();
