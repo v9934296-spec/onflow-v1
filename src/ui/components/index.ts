@@ -7,6 +7,7 @@ export { OnFlowMeta, MetaTag } from "./OnFlowMeta";
 export { FootageFrame, FootageThumbnail } from "./Footage";
 export { FootagePlayer } from "./FootagePlayer";
 export { TrickSlate } from "./TrickSlate";
+export { AttemptRead } from "./AttemptRead";
 export { SessionClock } from "./SessionClock";
 export { TrickTallyRow, AttemptLogRow } from "./AttemptLog";
 export { OptionList, type Option } from "./OptionList";

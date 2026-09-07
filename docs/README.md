@@ -41,6 +41,7 @@ The redesign supersedes spec §7 (screen presentation) and §10 (design system) 
 | [redesign-001-design-foundation.md](./redesign-001-design-foundation.md) | Phase 1 **implemented:** tokens, primitives, what changed and what is guarded by test. |
 | [redesign-002-session-screen.md](./redesign-002-session-screen.md) | Phase 2 slice 1 **implemented:** the canonical SESSION screen, persisted attempt queue, pending session-end retry. |
 | [redesign-003-review-step.md](./redesign-003-review-step.md) | Phase 2 slice 2 **implemented:** attempt review with real footage playback, USE CLIP / RETAKE / CANCEL, media-ownership rule. |
+| [redesign-004-result-screen.md](./redesign-004-result-screen.md) | Phase 2 slice 3 **implemented:** Result reordered around the read, footage restored, score demoted, LANDED / DIDN'T, loop closed. |
 
 ## Skater personalization
 
