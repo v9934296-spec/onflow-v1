@@ -33,3 +33,7 @@ ios/DerivedData/
 coverage/
 .tmp-boundary-check/
 repomix-output.xml
+
+# Python bytecode from vendored skill scripts
+__pycache__/
+*.pyc

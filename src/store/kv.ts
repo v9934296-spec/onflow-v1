@@ -59,4 +59,19 @@ export const kvKeys = {
   outbox: "onflow.outbox.v1",
   trickCatalog: "onflow.trickCatalog",
   recentTrickIds: "onflow.recentTrickIds",
+  /** How often each trick has been called. Frequency, not recency. */
+  trickUsage: "onflow.trickUsage.v1",
+  /** A session the skater ended while the server was unreachable. */
+  pendingSessionEnd: "onflow.pendingSessionEnd.v1",
+} as const;
+
+/**
+ * Per-account keys. Sign-out purges the profile and draft; pending attempts
+ * stay sealed to their owner like outbox rows and sync when that account
+ * returns.
+ */
+export const kvUserKeys = {
+  skaterProfile: (userId: string) => `onflow.skaterProfile.v1.${userId}`,
+  onboardingDraft: (userId: string) => `onflow.onboardingDraft.v1.${userId}`,
+  pendingAttempts: (userId: string) => `onflow.pendingAttempts.v1.${userId}`,
 } as const;

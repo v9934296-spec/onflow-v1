@@ -6,4 +6,13 @@ export {
   MIN_BODY_FONT_SIZE,
   type TextStyleToken,
 } from "./typography";
-export { space, radius, touchTarget, motionMs, PRESS_SCALE, glow } from "./layout";
+export {
+  space,
+  radius,
+  border,
+  touchTarget,
+  motionMs,
+  PRESS_SCALE,
+  PRESS_SCALE_HARD,
+  glow,
+} from "./layout";

@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  bumpUsage,
   filterTricks,
   mimeFromUri,
   nearestTricks,
-  popularFromRecent,
+  popularFromUsage,
   rememberRecentId,
+  usageCount,
 } from "../tricks";
 import { mintTrickId } from "../mappers/ids";
 import type { CatalogTrick } from "../models";
@@ -47,9 +49,33 @@ describe("trick registry helpers", () => {
     expect(rememberRecentId(["a", "b"], "b")).toEqual(["b", "a"]);
   });
 
-  it("builds popular only from real recent ids", () => {
-    expect(popularFromRecent(catalog, ["heelflip", "heelflip", "kickflip"]).map((t) => t.name)).toEqual([
-      "Heelflip",
+  it("counts how often a trick was actually called", () => {
+    let usage = bumpUsage({}, "kickflip");
+    usage = bumpUsage(usage, "heelflip");
+    usage = bumpUsage(usage, "kickflip");
+    expect(usageCount(usage, "kickflip")).toBe(2);
+    expect(usageCount(usage, "heelflip")).toBe(1);
+    expect(usageCount(usage, "never-called")).toBe(0);
+  });
+
+  it("keeps the usage tally bounded", () => {
+    let usage: Record<string, number> = {};
+    for (let i = 0; i < 80; i += 1) usage = bumpUsage(usage, `trick-${i}`);
+    expect(Object.keys(usage).length).toBeLessThanOrEqual(60);
+  });
+
+  it("builds popular from real counts, not from the recent list", () => {
+    // The recent list is de-duplicated, so counting it can only yield ones.
+    const usage = { heelflip: 4, kickflip: 2, "bs-lip": 1 };
+    expect(popularFromUsage(catalog, usage).map((t) => t.name)).toEqual(["Heelflip", "Kickflip"]);
+  });
+
+  it("does not call a trick popular after a single use", () => {
+    expect(popularFromUsage(catalog, { kickflip: 1, heelflip: 1 })).toEqual([]);
+  });
+
+  it("ignores counts for tricks that are not in the registry", () => {
+    expect(popularFromUsage(catalog, { "not-a-trick": 9, kickflip: 3 }).map((t) => t.name)).toEqual([
       "Kickflip",
     ]);
   });

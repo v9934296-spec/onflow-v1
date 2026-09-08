@@ -5,8 +5,10 @@ import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { attemptsForSession, mergeAttempts, nextAttemptNumber } from "@/domain/attempts";
+import { useSessionAttemptsStore } from "@/store/sessionAttempts";
 import { color, space, textStyle } from "@/ui/tokens";
 import { Button } from "@/ui/components/Button";
 import { RecordControl } from "@/ui/components/RecordControl";
@@ -16,9 +18,8 @@ import { CameraScrims } from "@/ui/components/CameraScrims";
 import { AsphaltSurface } from "@/ui/components/AsphaltSurface";
 import { ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { useSessionStore } from "@/store/sessionStore";
-import { enqueueClip } from "@/store/enqueueClip";
 import { compressionContract } from "@/domain/compression";
-import { mimeFromUri } from "@/domain/tricks";
+import { reviewHref, type MediaKind } from "@/domain/media";
 import type { ErrorKind } from "@/ui/copy/errors";
 
 const LOW_STORAGE_BYTES = 200 * 1024 * 1024;
@@ -26,7 +27,12 @@ const LOW_STORAGE_BYTES = 200 * 1024 * 1024;
 export default function CaptureScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { import: importParam } = useLocalSearchParams<{ import?: string }>();
   const trick = useSessionStore((s) => s.trick);
+  const session = useSessionStore((s) => s.session);
+  const confirmedAttempts = useSessionAttemptsStore((s) => s.confirmed);
+  const pendingAttempts = useSessionAttemptsStore((s) => s.pending);
+  const importLaunched = useRef(false);
   const camera = useRef<CameraView>(null);
   const startedAt = useRef<number | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
@@ -42,6 +48,13 @@ export default function CaptureScreen() {
       .catch(() => undefined);
   }, []);
 
+  // Opened from IMPORT CLIP: go straight to the library, once.
+  useEffect(() => {
+    if (importParam !== "1" || importLaunched.current) return;
+    importLaunched.current = true;
+    void pickLibrary(finish, setError);
+  }, [importParam]);
+
   useEffect(() => {
     if (!recording) return;
     const timer = setInterval(() => {
@@ -51,7 +64,13 @@ export default function CaptureScreen() {
     return () => clearInterval(timer);
   }, [recording]);
 
-  async function finish(uri: string, durationSeconds: number, mediaKind: "recorded" | "imported") {
+  /**
+   * Ceilings are checked here, before review: there is no point watching a
+   * clip the server would reject. A clip that passes goes to review, where
+   * the skater decides whether to keep it. Nothing uploads from this screen.
+   */
+  async function finish(uri: string, durationSeconds: number, mediaKind: MediaKind) {
+    const capturedAt = new Date().toISOString();
     const info = await FileSystem.getInfoAsync(uri);
     const sizeBytes = info.exists && "size" in info && typeof info.size === "number" ? info.size : 1;
     if (sizeBytes > compressionContract.maxBytes * 0.8) setLargeFile(true);
@@ -63,16 +82,7 @@ export default function CaptureScreen() {
       setError("clip_too_long");
       return;
     }
-    const localId = await enqueueClip({
-      uri,
-      durationSeconds,
-      sizeBytes,
-      mimeType: mimeFromUri(uri),
-      mediaKind,
-      capturedAt: new Date().toISOString(),
-    });
-    if (localId) router.replace(`/analyzing?localId=${localId}`);
-    else setError("clip_too_long");
+    router.replace(reviewHref({ uri, durationSeconds, sizeBytes, mediaKind, capturedAt }));
   }
 
   if (error) {
@@ -134,6 +144,10 @@ export default function CaptureScreen() {
   }
 
   const overlayScale = { maxFontSizeMultiplier: 1.3 } as const;
+  const attemptNumber =
+    trick && session
+      ? nextAttemptNumber(attemptsForSession(mergeAttempts(confirmedAttempts, pendingAttempts), session.id), trick.trickId)
+      : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: color.bg }}>
@@ -154,6 +168,15 @@ export default function CaptureScreen() {
           {trick?.stance || trick?.direction ? (
             <Text {...overlayScale} style={{ ...textStyle.mono, color: color.textPrimary }}>
               {[trick.stance, trick.direction].filter(Boolean).join(" · ")}
+            </Text>
+          ) : null}
+          {attemptNumber != null ? (
+            <Text
+              {...overlayScale}
+              accessibilityLabel={`Attempt ${attemptNumber}`}
+              style={{ ...textStyle.monoLg, color: color.neon }}
+            >
+              ATTEMPT {String(attemptNumber).padStart(2, "0")}
             </Text>
           ) : null}
           <Text
@@ -226,7 +249,7 @@ function formatElapsed(seconds: number): string {
 }
 
 async function pickLibrary(
-  finish: (uri: string, durationSeconds: number, kind: "recorded" | "imported") => Promise<void>,
+  finish: (uri: string, durationSeconds: number, kind: MediaKind) => Promise<void>,
   setError: (kind: ErrorKind) => void,
 ) {
   const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"] });

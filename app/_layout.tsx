@@ -15,13 +15,32 @@ import { JetBrainsMono_400Regular } from "@expo-google-fonts/jetbrains-mono";
 import { queryClient } from "@/store/queryClient";
 import { useAuthStore } from "@/store/authStore";
 import { useSessionStore } from "@/store/sessionStore";
+import { useSkaterProfileStore } from "@/store/skaterProfileStore";
+import { useSessionAttemptsStore } from "@/store/sessionAttempts";
+import { retryPendingSessionEnd } from "@/store/sessionActions";
 import { initOutbox } from "@/store/outbox";
 import { drainRecoverable } from "@/store/upload";
+import {
+  isOnboardingComplete,
+  onboardingSteps,
+  resolveEntryRoute,
+  resumeStep,
+} from "@/domain/skaterProfile";
 import { color } from "@/ui/tokens";
 
+/**
+ * Routes on authentication plus server-confirmed onboarding. A profile that is
+ * unavailable (endpoint not deployed, or unreachable with nothing cached)
+ * never blocks a skater from Home; onboarding is retried on the next load.
+ */
 function AuthGate({ children }: { children: ReactNode }) {
   const phase = useAuthStore((s) => s.phase);
+  const userId = useAuthStore((s) => s.userId);
   const hydrate = useAuthStore((s) => s.hydrate);
+  const profileStatus = useSkaterProfileStore((s) => s.status);
+  const completed = useSkaterProfileStore((s) => isOnboardingComplete(s.profile));
+  const draftStep = useSkaterProfileStore((s) => s.draftStep);
+  const loadProfile = useSkaterProfileStore((s) => s.load);
   const segments = useSegments();
   const router = useRouter();
 
@@ -32,25 +51,48 @@ function AuthGate({ children }: { children: ReactNode }) {
   }, [hydrate]);
 
   useEffect(() => {
+    if (phase !== "signed_in" || !userId) return;
+    void loadProfile(userId);
+  }, [phase, userId, loadProfile]);
+
+  // Everything the phone owes the server is retried on sign-in and every foreground.
+  useEffect(() => {
     if (phase !== "signed_in") return;
-    const userId = useAuthStore.getState().userId;
-    if (userId) void drainRecoverable(userId);
+    const settle = (current: string) => {
+      void drainRecoverable(current);
+      void useSessionAttemptsStore.getState().flush(current);
+      void retryPendingSessionEnd();
+    };
+    const id = useAuthStore.getState().userId;
+    if (id) settle(id);
     const sub = AppState.addEventListener("change", (next) => {
       if (next !== "active") return;
-      const id = useAuthStore.getState().userId;
-      if (id) void drainRecoverable(id);
+      const current = useAuthStore.getState().userId;
+      if (!current) return;
+      settle(current);
+      if (useSkaterProfileStore.getState().status !== "loaded") void loadProfile(current);
     });
     return () => sub.remove();
-  }, [phase]);
+  }, [phase, loadProfile]);
+
+  const route = resolveEntryRoute({ phase, profileStatus, completed });
 
   useEffect(() => {
-    if (phase === "loading") return;
+    if (route === "loading") return;
     const onSignIn = segments[0] === "sign-in";
-    if (phase === "signed_out" && !onSignIn) router.replace("/sign-in");
-    if (phase === "signed_in" && onSignIn) router.replace("/");
-  }, [phase, segments, router]);
+    const inOnboarding = segments[0] === "(onboarding)";
+    if (route === "sign-in") {
+      if (!onSignIn) router.replace("/sign-in");
+      return;
+    }
+    if (route === "onboarding") {
+      if (!inOnboarding) router.replace(`/(onboarding)/${resumeStep(draftStep, onboardingSteps())}`);
+      return;
+    }
+    if (onSignIn || inOnboarding) router.replace("/");
+  }, [route, segments, router, draftStep]);
 
-  if (phase === "loading") {
+  if (route === "loading") {
     return (
       <View style={{ flex: 1, backgroundColor: color.bg, alignItems: "center", justifyContent: "center" }}>
         <ActivityIndicator color={color.neon} />
@@ -82,11 +124,14 @@ export default function RootLayout() {
       <AuthGate>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.bg } }}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="(onboarding)" options={{ gestureEnabled: false }} />
           <Stack.Screen name="sign-in" />
           <Stack.Screen name="trick" />
           <Stack.Screen name="capture" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="review" options={{ gestureEnabled: false }} />
           <Stack.Screen name="analyzing" options={{ gestureEnabled: false }} />
           <Stack.Screen name="result" />
+          <Stack.Screen name="personalization" />
           <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
         </Stack>
       </AuthGate>

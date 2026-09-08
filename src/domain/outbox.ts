@@ -29,6 +29,8 @@ export const CATALOG_ERROR_KINDS = [
   "store_unavailable",
   "entitlement_syncing",
   "low_storage",
+  "profile_save_failed",
+  "profile_invalid",
   "unknown",
 ] as const;
 

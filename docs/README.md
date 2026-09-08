@@ -30,3 +30,22 @@ Contract verification against the V1 build spec. **Phase 0 closed by owner 2026-
 | OF-007 | DOC-001 remaining UNVERIFIED / §18.3 | **Superseded** by the Phase 0 gate audit |
 
 Phase 1 may start. Do not treat 6 Mbps as measured. Q&A 11 stays OPEN as measurement debt.
+
+## V1 mobile redesign ledger
+
+The redesign supersedes spec §7 (screen presentation) and §10 (design system) by owner decision. Contract, truth rules and state ownership are unchanged.
+
+| Document | Purpose |
+|----------|---------|
+| [redesign-000-phase-0-audit.md](./redesign-000-phase-0-audit.md) | Audit findings, dead-control list, owner decisions B1–B3, implementation order. |
+| [redesign-001-design-foundation.md](./redesign-001-design-foundation.md) | Phase 1 **implemented:** tokens, primitives, what changed and what is guarded by test. |
+| [redesign-002-session-screen.md](./redesign-002-session-screen.md) | Phase 2 slice 1 **implemented:** the canonical SESSION screen, persisted attempt queue, pending session-end retry. |
+| [redesign-003-review-step.md](./redesign-003-review-step.md) | Phase 2 slice 2 **implemented:** attempt review with real footage playback, USE CLIP / RETAKE / CANCEL, media-ownership rule. |
+| [redesign-004-result-screen.md](./redesign-004-result-screen.md) | Phase 2 slice 3 **implemented:** Result reordered around the read, footage restored, score demoted, LANDED / DIDN'T, loop closed. |
+| [redesign-005-trick-picker.md](./redesign-005-trick-picker.md) | Phase 2 slice 4 **implemented, closes Phase 2:** trick rows, segmented modifiers, and a real usage tally behind MOST CALLED. |
+
+## Skater personalization
+
+| Document | Purpose |
+|----------|---------|
+| [personalization-001-client.md](./personalization-001-client.md) | Client **implemented** against the designed contract. Age step **paused** (P2). Backend deliverables listed; endpoint not yet in `openapi.json`. |

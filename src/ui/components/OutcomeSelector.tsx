@@ -1,7 +1,16 @@
 import { Pressable, Text, View } from "react-native";
 import type { AttemptOutcome } from "../../domain/models";
-import { color, radius, space, textStyle, touchTarget } from "../tokens";
+import { border, color, space, textStyle, touchTarget } from "../tokens";
+import { outcomeCopy } from "../copy";
 
+/**
+ * The skater's call, and the most important control on the Result screen.
+ * Two choices because the record has two values — the engine's read never
+ * overrides it (truth rule 6).
+ *
+ * Each choice carries glyph and word as well as color, so the selection is
+ * never communicated by color alone (guardrails 12).
+ */
 export function OutcomeSelector({
   value,
   onChange,
@@ -10,17 +19,16 @@ export function OutcomeSelector({
   onChange: (next: AttemptOutcome) => void;
 }) {
   return (
-    <View style={{ flexDirection: "row", gap: space.md }}>
+    <View style={{ flexDirection: "row" }}>
       <Choice
-        label="Landed"
-        glyph="+"
+        outcome="landed"
         selected={value === "landed"}
         selectedColor={color.neon}
         onPress={() => onChange("landed")}
       />
+      <View style={{ width: border.hairline, backgroundColor: color.hairline }} />
       <Choice
-        label="Missed"
-        glyph="–"
+        outcome="missed"
         selected={value === "missed"}
         selectedColor={color.alum}
         onPress={() => onChange("missed")}
@@ -30,40 +38,45 @@ export function OutcomeSelector({
 }
 
 function Choice({
-  label,
-  glyph,
+  outcome,
   selected,
   selectedColor,
   onPress,
 }: {
-  label: string;
-  glyph: string;
+  outcome: AttemptOutcome;
   selected: boolean;
   selectedColor: string;
   onPress: () => void;
 }) {
+  const copy = outcomeCopy[outcome];
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={copy.accessibilityLabel}
       accessibilityState={{ selected }}
       onPress={onPress}
-      style={{
+      style={({ pressed }) => ({
         flex: 1,
-        minHeight: touchTarget.outcomeSelector,
-        borderRadius: radius.md,
-        borderWidth: 2,
-        borderColor: selected ? selectedColor : color.hairline,
-        backgroundColor: color.surface,
+        minHeight: touchTarget.outcomeSelector + space.md,
         alignItems: "center",
         justifyContent: "center",
-        gap: 4,
-      }}
+        gap: space.xs,
+        backgroundColor: selected ? color.surfaceAlt : pressed ? color.surface : "transparent",
+        borderBottomWidth: border.rule * 2,
+        borderBottomColor: selected ? selectedColor : "transparent",
+      })}
     >
-      <Text style={{ ...textStyle.h2, color: selected ? selectedColor : color.textSecondary }}>
-        {glyph}
+      <Text style={{ ...textStyle.h2, color: selected ? selectedColor : color.textTertiary }}>
+        {copy.glyph}
       </Text>
-      <Text style={{ ...textStyle.label, color: color.textPrimary }}>{label}</Text>
+      <Text
+        style={{
+          ...textStyle.h2,
+          color: selected ? color.textPrimary : color.textSecondary,
+        }}
+      >
+        {copy.label.toUpperCase()}
+      </Text>
     </Pressable>
   );
 }

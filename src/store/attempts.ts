@@ -1,11 +1,19 @@
-import { syncAttempts } from "../api/endpoints";
 import type { Attempt, AttemptOutcome } from "../domain/models";
 import { mintAttemptId } from "../domain/mappers/ids";
+import { useAuthStore } from "./authStore";
+import { useSessionAttemptsStore } from "./sessionAttempts";
 import { useSessionStore } from "./sessionStore";
 
-export async function reportOutcomeAndMaybeContinue(outcome: AttemptOutcome): Promise<void> {
+/**
+ * Records the skater's call for the current trick in the current session.
+ * The attempt is persisted locally before any request is made and stays
+ * queued until the server accepts it — the outcome is never lost to a dropped
+ * connection. Resolves true when the server has it, false when it is queued.
+ */
+export async function recordOutcome(outcome: AttemptOutcome): Promise<boolean> {
   const { session, trick } = useSessionStore.getState();
-  if (!session || !trick) return;
+  const userId = useAuthStore.getState().userId;
+  if (!session || !trick || !userId) return false;
   const attempt: Attempt = {
     id: mintAttemptId(globalThis.crypto?.randomUUID?.() ?? `att-${Date.now()}`),
     sessionId: session.id,
@@ -14,5 +22,5 @@ export async function reportOutcomeAndMaybeContinue(outcome: AttemptOutcome): Pr
     outcome,
     loggedAt: new Date().toISOString(),
   };
-  await syncAttempts([attempt]);
+  return useSessionAttemptsStore.getState().record(userId, attempt);
 }

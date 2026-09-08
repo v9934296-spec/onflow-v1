@@ -1,6 +1,7 @@
-import { Image, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import type { CatalogTrick, SkateSession } from "../../domain/models";
 import { color, radius, space, textStyle, touchTarget } from "../tokens";
+import { FootageFrame } from "./Footage";
 
 export function TrickCard({
   trick,
@@ -86,7 +87,7 @@ export function SessionCard({
   );
 }
 
-/** Missing media renders as nothing — never a fake frame (spec 10.4). */
+/** @deprecated Use `FootageFrame`. Kept until Home moves off it in Phase 3. */
 export function VideoThumbnail({
   uri,
   accessibilityLabel,
@@ -94,22 +95,5 @@ export function VideoThumbnail({
   uri: string | null;
   accessibilityLabel?: string;
 }) {
-  if (!uri) return null;
-  return (
-    <View
-      style={{
-        aspectRatio: 16 / 9,
-        borderRadius: radius.md,
-        overflow: "hidden",
-        backgroundColor: color.surface,
-      }}
-    >
-      <Image
-        accessibilityLabel={accessibilityLabel}
-        source={{ uri }}
-        style={{ width: "100%", height: "100%" }}
-        resizeMode="contain"
-      />
-    </View>
-  );
+  return <FootageFrame uri={uri} accessibilityLabel={accessibilityLabel} corner="xs" />;
 }

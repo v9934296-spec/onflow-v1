@@ -23,6 +23,8 @@ const KINDS: ErrorKind[] = [
   "store_unavailable",
   "entitlement_syncing",
   "low_storage",
+  "profile_save_failed",
+  "profile_invalid",
   "unknown",
 ];
 

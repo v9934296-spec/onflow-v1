@@ -37,6 +37,8 @@ export default tseslint.config(
       ".tmp-boundary-check/**",
       "files/**",
       "onfkowv1/**",
+      // Vendored third-party skill assets. Not product code; not ours to lint.
+      ".claude/**",
     ],
   },
 

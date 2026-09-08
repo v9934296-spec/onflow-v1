@@ -9,7 +9,10 @@ import {
 } from "./schemas/runtime";
 import { mapAttempt, mapCatalogTrick, mapSession } from "../domain/mappers/records";
 import { mapClipJob } from "../domain/mappers/clipJob";
+import { mapSkaterProfile, type SkaterProfilePatchWire } from "../domain/mappers/skaterProfile";
 import type { AnalysisResult, Attempt, CatalogTrick, SkateSession } from "../domain/models";
+import type { SkaterProfile } from "../domain/skaterProfile";
+import { skaterProfileResponseSchema, skaterProfileSchema } from "./schemas/runtime";
 import type { ApiResult } from "./types";
 import { fail, ok } from "./types";
 
@@ -34,6 +37,33 @@ export async function fetchMe() {
   const res = await apiRequest<unknown>("/api/v1/account/me");
   if (!res.ok) return res;
   return validated(accountMeSchema.safeParse(res.data));
+}
+
+/**
+ * Skater profile (docs/personalization-001-client.md). Not yet in
+ * `openapi/openapi.json` — the snapshot is refreshed from the deployed API,
+ * never hand-edited. Until then zod is the contract check. A 404 here means
+ * the endpoint is not deployed; the store treats that as feature-absent.
+ */
+export async function fetchSkaterProfile(): Promise<ApiResult<SkaterProfile | null>> {
+  const res = await apiRequest<unknown>("/api/v1/account/skater-profile", { timeoutMs: 10_000 });
+  if (!res.ok) return res;
+  const parsed = skaterProfileResponseSchema.safeParse(res.data);
+  if (!parsed.success) return fail({ kind: "contract" });
+  return ok(parsed.data ? mapSkaterProfile(parsed.data) : null);
+}
+
+export async function patchSkaterProfile(
+  body: SkaterProfilePatchWire,
+): Promise<ApiResult<SkaterProfile>> {
+  const res = await apiRequest<unknown>("/api/v1/account/skater-profile", {
+    method: "PATCH",
+    json: body,
+  });
+  if (!res.ok) return res;
+  const parsed = skaterProfileSchema.safeParse(res.data);
+  if (!parsed.success) return fail({ kind: "contract" });
+  return ok(mapSkaterProfile(parsed.data));
 }
 
 export async function createSession(): Promise<ApiResult<SkateSession>> {
