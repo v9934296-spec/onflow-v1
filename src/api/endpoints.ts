@@ -40,10 +40,11 @@ export async function fetchMe() {
 }
 
 /**
- * Skater profile (docs/personalization-001-client.md). Not yet in
- * `openapi/openapi.json` — the snapshot is refreshed from the deployed API,
- * never hand-edited. Until then zod is the contract check. A 404 here means
- * the endpoint is not deployed; the store treats that as feature-absent.
+ * Skater profile (docs/personalization-001-client.md). Implemented on
+ * `services/api`. `openapi/openapi.json` is a snapshot refreshed from a
+ * running API, never hand-edited — until then zod is the contract check.
+ * A 404 here still means the endpoint is not deployed; the store treats
+ * that as feature-absent.
  */
 export async function fetchSkaterProfile(): Promise<ApiResult<SkaterProfile | null>> {
   const res = await apiRequest<unknown>("/api/v1/account/skater-profile", { timeoutMs: 10_000 });

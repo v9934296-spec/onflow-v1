@@ -26,7 +26,10 @@ import { OnFlowMeta } from "@/ui/components/OnFlowMeta";
 import { ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { SessionClock } from "@/ui/components/SessionClock";
 import { Skeleton } from "@/ui/components/States";
+import { SyncStatus } from "@/ui/components/SyncStatus";
+import { reconcileOwnedWork } from "@/store/reconcile";
 import { TrickSlate } from "@/ui/components/TrickSlate";
+import { useOffline } from "@/ui/hooks/useOffline";
 import { color, dynamicTypeMaxScale, space, textStyle } from "@/ui/tokens";
 
 const LOG_LIMIT = 30;
@@ -47,10 +50,15 @@ export default function SessionScreen() {
   const userId = useAuthStore((s) => s.userId);
   const confirmed = useSessionAttemptsStore((s) => s.confirmed);
   const pending = useSessionAttemptsStore((s) => s.pending);
+  const queue = useSessionAttemptsStore((s) => s.queue);
   const loadAttempts = useSessionAttemptsStore((s) => s.load);
+  const retryDead = useSessionAttemptsStore((s) => s.retryDead);
+  const dismissDead = useSessionAttemptsStore((s) => s.dismissDead);
+  const sessionEndPending = useSessionStore((s) => s.pendingEnd != null);
   const [processing, setProcessing] = useState(0);
   const [endOpen, setEndOpen] = useState(false);
   const [starting, setStarting] = useState(false);
+  const offline = useOffline();
 
   const sessionId = session?.id ?? null;
 
@@ -131,6 +139,23 @@ export default function SessionScreen() {
         ]}
         right={<SessionClock startedAt={session.startedAt} />}
       />
+      <View style={{ paddingHorizontal: space.lg, paddingTop: space.sm }}>
+        <SyncStatus
+          queue={queue}
+          clipsQueued={processing}
+          sessionEndPending={sessionEndPending}
+          offline={offline}
+          onRetry={() => {
+            if (userId) {
+              void retryDead(userId);
+              void reconcileOwnedWork(userId);
+            }
+          }}
+          onDismissDead={(key) => {
+            if (userId) dismissDead(userId, key);
+          }}
+        />
+      </View>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: space.xl }}>
         {trick ? (
           <TrickSlate

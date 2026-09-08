@@ -17,6 +17,7 @@ export function FootagePlayer({
   autoPlay = true,
   nativeControls = false,
   accessibilityLabel,
+  onError,
 }: {
   uri: string;
   loop?: boolean;
@@ -24,12 +25,21 @@ export function FootagePlayer({
   autoPlay?: boolean;
   nativeControls?: boolean;
   accessibilityLabel?: string;
+  onError?: () => void;
 }) {
   const player = useVideoPlayer(uri, (instance) => {
     instance.loop = loop;
     instance.muted = muted;
     if (autoPlay) instance.play();
   });
+
+  useEffect(() => {
+    if (!onError || typeof player.addListener !== "function") return;
+    const sub = player.addListener("statusChange", (payload: { status?: string; error?: unknown }) => {
+      if (payload.status === "error" || payload.error) onError();
+    });
+    return () => sub.remove();
+  }, [player, onError]);
 
   // Pause on unmount so audio never outlives the screen.
   useEffect(() => {

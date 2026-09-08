@@ -5,7 +5,7 @@
 **Status:** **Approved** 2026-09-01 by owner (Vincent). Phase 1 feature implementation may start. §18 gate item 7 is **accepted unmeasured** — 6 Mbps remains a candidate, not a locked launch number. Q&A 11 stays OPEN as a measurement debt, not a Phase 0 blocker.
 **Owner:** Vincent (Toner)
 **Reference client:** `onflow-lite` (Expo 53 / RN 0.79.6 / React 19 / expo-router 5)
-**Backend:** `services/api` (FastAPI), unchanged except §9
+**Backend:** `services/api` in this repo (FastAPI). Same working API as the demo tree, plus skater personalization. Unchanged except §9 and PERSONALIZATION-001.
 **Target platform:** iOS first
 **Supersedes:** all prior build-spec drafts
 
@@ -56,7 +56,7 @@ None of these require Video Parts, feeds, or discovery to exist. They require th
 | # | Decision | Resolution | Reason | Revisit when |
 |---|---|---|---|---|
 | 1 | Client | New Expo client, new repo | Presentation rebuild too large to do in place safely | — |
-| 2 | Backend | Existing `services/api`, unchanged except §9 | Hardened, tested, and not the problem | — |
+| 2 | Backend | Existing FastAPI `services/api`, now in this repo | Hardened, tested, and not the problem. Copied in 2026-09-08 so the launch tree runs against the working API; still unchanged except §9 and skater personalization | — |
 | 3 | Reference client | `onflow-lite` stays live until §14 parity passes | It is the executable spec for hardened behavior | Parity green |
 | 4 | Platform | iOS first | Existing build pipeline is EAS iOS | Android demand |
 | 5 | Auth | **Apple only at launch** | `/auth/google` exists server-side and `signInWithGoogle` exists in `src/api/authApi.ts`, but there is **no Google sign-in SDK in `package.json`** and no Google plugin in `app.json` — the client can call the endpoint but cannot obtain an `id_token`. Google is backend inheritance, not a shipped feature | Android, or a deliberate decision to add the SDK |

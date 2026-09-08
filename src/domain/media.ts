@@ -68,3 +68,33 @@ export function reviewHref(params: ReviewParams): string {
   });
   return `/review?${query.toString()}`;
 }
+
+export type MediaViewState = "loading" | "ready" | "missing" | "failed";
+
+export function isLocalMediaUri(uri: string): boolean {
+  return (
+    uri.startsWith("file:") ||
+    uri.startsWith("content:") ||
+    uri.startsWith("ph://") ||
+    uri.startsWith("assets-library:")
+  );
+}
+
+/**
+ * Honest playback states. A missing URI is not a fake frame. A probe in
+ * flight is loading. A player error or vanished local file is failed so
+ * the screen can offer retry, not a broken video.
+ */
+export function mediaViewState(input: {
+  readonly uri: string | null | undefined;
+  /** `null` while the local file is being probed. Remote URIs skip this. */
+  readonly fileExists: boolean | null;
+  readonly playerFailed: boolean;
+}): MediaViewState {
+  const uri = (input.uri ?? "").trim();
+  if (!uri) return "missing";
+  if (isLocalMediaUri(uri) && input.fileExists === null) return "loading";
+  if (isLocalMediaUri(uri) && input.fileExists === false) return "failed";
+  if (input.playerFailed) return "failed";
+  return "ready";
+}

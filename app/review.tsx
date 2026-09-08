@@ -1,12 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { attemptsForSession, mergeAttempts, nextAttemptNumber } from "@/domain/attempts";
+import { leaveDecision } from "@/domain/leaveGuard";
 import {
   formatClipLength,
   formatFileSize,
+  isLocalMediaUri,
   mayDeleteWorkingFile,
   parseReviewParams,
 } from "@/domain/media";
@@ -14,13 +16,15 @@ import { enqueueClip } from "@/store/enqueueClip";
 import { mimeFromUri } from "@/domain/tricks";
 import { useSessionAttemptsStore } from "@/store/sessionAttempts";
 import { useSessionStore } from "@/store/sessionStore";
-import { FootagePlayer } from "@/ui/components/FootagePlayer";
+import { ConfirmDialog } from "@/ui/components/Form";
+import { MediaStage } from "@/ui/components/MediaStage";
 import { OnFlowButton } from "@/ui/components/OnFlowButton";
 import { OnFlowDivider } from "@/ui/components/OnFlowDivider";
 import { OnFlowMeta } from "@/ui/components/OnFlowMeta";
 import { ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { ErrorPanel } from "@/ui/components/States";
 import { TrickSlate } from "@/ui/components/TrickSlate";
+import { useLeaveGuard } from "@/ui/hooks/useLeaveGuard";
 import { space } from "@/ui/tokens";
 
 /**
@@ -45,6 +49,9 @@ export default function ReviewScreen() {
   const pending = useSessionAttemptsStore((s) => s.pending);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [playbackKey, setPlaybackKey] = useState(0);
+  const [fileExists, setFileExists] = useState<boolean | null>(null);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const clip = useMemo(() => parseReviewParams(raw), [raw]);
 
@@ -52,6 +59,33 @@ export default function ReviewScreen() {
     trick && session
       ? nextAttemptNumber(attemptsForSession(mergeAttempts(confirmed, pending), session.id), trick.trickId)
       : null;
+
+  useEffect(() => {
+    if (!clip) return;
+    if (!isLocalMediaUri(clip.uri)) {
+      setFileExists(true);
+      return;
+    }
+    setFileExists(null);
+    let cancelled = false;
+    void FileSystem.getInfoAsync(clip.uri)
+      .then((info) => {
+        if (!cancelled) setFileExists(info.exists);
+      })
+      .catch(() => {
+        if (!cancelled) setFileExists(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [clip, playbackKey]);
+
+  const reviewLeave = leaveDecision({
+    screen: "review",
+    busy,
+    mediaKind: clip?.mediaKind,
+  });
+  useLeaveGuard(clip ? reviewLeave : "allow", () => setConfirmDiscard(true));
 
   if (!clip) {
     return (
@@ -61,24 +95,38 @@ export default function ReviewScreen() {
     );
   }
 
-  const imported = clip.mediaKind === "imported";
+  const take = clip;
+  const imported = take.mediaKind === "imported";
 
-  /** Retake and cancel discard a file OnFlow recorded. A library original is never touched. */
+  /** Retake and confirmed cancel discard a file OnFlow recorded. A library original is never touched. */
   async function discardWorkingFile() {
-    if (!clip || !mayDeleteWorkingFile(clip.mediaKind)) return;
+    if (!mayDeleteWorkingFile(take.mediaKind)) return;
     try {
-      await FileSystem.deleteAsync(clip.uri, { idempotent: true });
+      await FileSystem.deleteAsync(take.uri, { idempotent: true });
     } catch {
       // Storage cleanup is best effort; it never blocks the skater.
     }
   }
 
+  function requestLeave() {
+    const decision = leaveDecision({ screen: "review", busy, mediaKind: take.mediaKind });
+    if (decision === "block") return;
+    if (decision === "confirm") {
+      setConfirmDiscard(true);
+      return;
+    }
+    router.replace("/flow");
+  }
+
   return (
     <ScreenSafeArea>
       <View style={{ flex: 1, justifyContent: "center" }}>
-        <FootagePlayer
+        <MediaStage
           uri={clip.uri}
+          fileExists={fileExists}
+          playbackKey={playbackKey}
           accessibilityLabel={`Attempt footage, ${formatClipLength(clip.durationSeconds)}`}
+          onRetry={() => setPlaybackKey((n) => n + 1)}
         />
         <TrickSlate
           name={trick?.canonicalName ?? "Untitled attempt"}
@@ -115,6 +163,7 @@ export default function ReviewScreen() {
           size="hero"
           haptic
           loading={busy}
+          disabled={fileExists === false}
           onPress={() => {
             setBusy(true);
             void (async () => {
@@ -148,13 +197,23 @@ export default function ReviewScreen() {
             size="compact"
             variant="quiet"
             disabled={busy}
-            onPress={() => {
-              void discardWorkingFile();
-              router.replace("/flow");
-            }}
+            onPress={requestLeave}
           />
         </View>
       </View>
+
+      <ConfirmDialog
+        visible={confirmDiscard}
+        title="Discard this take?"
+        body="This only deletes the clip OnFlow just recorded. Your library is untouched."
+        primaryLabel="Keep clip"
+        secondaryLabel="Discard"
+        onPrimary={() => setConfirmDiscard(false)}
+        onSecondary={() => {
+          setConfirmDiscard(false);
+          void discardWorkingFile().then(() => router.replace("/flow"));
+        }}
+      />
     </ScreenSafeArea>
   );
 }

@@ -95,6 +95,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/account/skater-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Skater Profile
+         * @description 200 + JSON null before a row exists. 404 here would look like 'not deployed' to the client.
+         */
+        get: operations["get_skater_profile_api_v1_account_skater_profile_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Skater Profile */
+        patch: operations["patch_skater_profile_api_v1_account_skater_profile_patch"];
+        trace?: never;
+    };
     "/api/v1/account": {
         parameters: {
             query?: never;
@@ -1896,6 +1917,54 @@ export interface components {
             /** Actionable Cues */
             actionable_cues?: components["schemas"]["ActionableCuePayload"][];
         };
+        /** SkaterProfileOut */
+        SkaterProfileOut: {
+            /** Natural Stance */
+            natural_stance?: string | null;
+            /** Skate Styles */
+            skate_styles?: string[];
+            /** Primary Skate Style */
+            primary_skate_style?: string | null;
+            /** Experience Level */
+            experience_level?: string | null;
+            /** Age Range */
+            age_range?: string | null;
+            /** City */
+            city?: string | null;
+            /** Home Park */
+            home_park?: string | null;
+            /** Favorite Brands */
+            favorite_brands?: string[];
+            /** Onboarding Completed At */
+            onboarding_completed_at?: string | null;
+        };
+        /**
+         * SkaterProfilePatchRequest
+         * @description Loose body — enum/limit/completion rules live in ``app.services.skater_profile``.
+         */
+        SkaterProfilePatchRequest: {
+            /** Natural Stance */
+            natural_stance?: unknown;
+            /** Skate Styles */
+            skate_styles?: unknown;
+            /** Primary Skate Style */
+            primary_skate_style?: unknown;
+            /** Experience Level */
+            experience_level?: unknown;
+            /** Age Range */
+            age_range?: unknown;
+            /** City */
+            city?: unknown;
+            /** Home Park */
+            home_park?: unknown;
+            /** Favorite Brands */
+            favorite_brands?: unknown;
+            /**
+             * Complete Onboarding
+             * @default false
+             */
+            complete_onboarding: unknown;
+        };
         /**
          * SyncRequest
          * @description Client's view of entitlements after purchase or restore.
@@ -2137,6 +2206,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_skater_profile_api_v1_account_skater_profile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkaterProfileOut"] | null;
+                };
+            };
+        };
+    };
+    patch_skater_profile_api_v1_account_skater_profile_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkaterProfilePatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkaterProfileOut"];
                 };
             };
             /** @description Validation Error */

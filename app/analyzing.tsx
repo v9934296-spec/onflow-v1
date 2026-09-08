@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { AppState, Text } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { AppState, BackHandler, Text } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { color, space, textStyle } from "@/ui/tokens";
 import { Button } from "@/ui/components/Button";
@@ -113,6 +113,14 @@ export default function AnalyzingScreen() {
       app.remove();
     };
   }, [localId, router, retryNonce]);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      router.replace("/capture");
+      return true;
+    });
+    return () => sub.remove();
+  }, [router]);
 
   const phase = analyzingPhase(row?.state ?? "pending", job?.status ?? null);
   const fraction = row ? progressFraction(row) : null;

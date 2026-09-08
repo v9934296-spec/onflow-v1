@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -32,6 +32,7 @@ import { SegmentedSelector } from "@/ui/components/SegmentedSelector";
 import { EmptyState, ErrorPanel, Skeleton } from "@/ui/components/States";
 import { TrickRow } from "@/ui/components/TrickRow";
 import { stanceExplainer } from "@/ui/copy/personalization";
+import { useOffline } from "@/ui/hooks/useOffline";
 import { color, space, textStyle } from "@/ui/tokens";
 
 /**
@@ -55,13 +56,29 @@ export default function TrickScreen() {
   const [picked, setPicked] = useState<CatalogTrick | null>(null);
   const [stance, setStance] = useState<string | null>(existing?.stance ?? null);
   const [direction, setDirection] = useState<string | null>(existing?.direction ?? null);
+  const [retryNonce, setRetryNonce] = useState(0);
+  const offline = useOffline();
+  const wasOffline = useRef(offline);
 
   useEffect(() => {
+    let cancelled = false;
     void loadTrickCatalog().then((res) => {
+      if (cancelled) return;
       if (!res.ok) setError(true);
-      else setTricks(res.data);
+      else {
+        setError(false);
+        setTricks(res.data);
+      }
     });
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [retryNonce]);
+
+  useEffect(() => {
+    if (wasOffline.current && !offline && error) setRetryNonce((n) => n + 1);
+    wasOffline.current = offline;
+  }, [offline, error]);
 
   useEffect(() => {
     if (!tricks || !existing) return;
@@ -95,7 +112,16 @@ export default function TrickScreen() {
   if (error) {
     return (
       <ScreenSafeArea style={{ justifyContent: "center" }}>
-        <ErrorPanel kind="offline" onPrimary={() => router.back()} />
+        <ErrorPanel
+          kind="offline"
+          onPrimary={() => {
+            setError(false);
+            setRetryNonce((n) => n + 1);
+          }}
+        />
+        <View style={{ paddingHorizontal: space.lg }}>
+          <OnFlowButton label="Close" size="compact" variant="quiet" onPress={() => router.back()} />
+        </View>
       </ScreenSafeArea>
     );
   }

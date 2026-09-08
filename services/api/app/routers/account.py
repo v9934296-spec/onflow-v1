@@ -1,0 +1,258 @@
+"""
+Signed-in account snapshot (quota, tier).
+
+``GET /quota`` reflects **product** tier and monthly limits (``clip_quota``). Per-route
+slowapi limits on export/delete are **security** throttles only — they do not change
+Gemini model or analysis quality.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel, Field
+from starlette.responses import JSONResponse, Response
+
+from app.core.auth import get_current_user
+from app.core.config import get_settings
+from app.core.feature_gates import tier_has_feature
+from app.core.rate_limit import (
+    enforce_delete_account_rate_limit,
+    export_limit_per_hour,
+    limiter,
+    signed_in_user_key,
+)
+from app.core.tiers import normalize_tier, tier_has_unlimited_analyses
+from app.models import get_analyses_remaining
+from app.routers.consent import consent_status_from_user
+from app.schemas.consent import ConsentStatus
+from app.schemas.skater_profile import SkaterProfileOut, SkaterProfilePatchRequest
+from app.services.deletion_queue import enqueue_hard_delete, list_v1_clip_storage_keys
+from app.services.skater_profile import to_out, validate_patch
+
+router = APIRouter(prefix="/api/v1/account", tags=["account"])
+
+
+class AccountQuotaResponse(BaseModel):
+    tier: str
+    analyses_remaining: int
+    trial_expires_at: datetime | None = None
+    subscription_status: str
+    bonus_analyses: int
+    monthly_free_remaining: int | None = Field(
+        default=None,
+        description="None when Pro/Coach (unlimited analyses).",
+    )
+
+
+class MeResponse(BaseModel):
+    user_id: str
+    email: str
+    tier: str
+    profile_image_url: str | None = None
+    consent: ConsentStatus
+
+
+class ProfileImageUpdateRequest(BaseModel):
+    profile_image_url: str | None = None
+
+
+def _account_deletion_queued_response() -> JSONResponse:
+    return JSONResponse(
+        status_code=202,
+        content={
+            "status": "queued",
+            "message": (
+                "Account deletion queued. Your clips will be permanently removed within 24 hours."
+            ),
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@router.get("/me", response_model=MeResponse)
+def get_me(
+    request: Request,
+    user_id: str = Depends(get_current_user),
+) -> MeResponse:
+    db = request.app.state.db
+    u = db.get_user(user_id)
+    if u is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    return MeResponse(
+        user_id=u.id,
+        email=u.email,
+        tier=u.tier,
+        profile_image_url=u.profile_image_url,
+        consent=consent_status_from_user(u),
+    )
+
+
+def _validate_profile_image_url(raw: str | None) -> str | None:
+    if raw is None:
+        return None
+    val = raw.strip()
+    if not val:
+        return None
+    if val.startswith("stock:"):
+        return val[:64]
+    if not val.startswith("data:image/") or ";base64," not in val:
+        raise HTTPException(
+            status_code=422,
+            detail="profile_image_url must be a stock: token or data:image/*;base64 payload.",
+        )
+    # Keep payload bounded to avoid oversized rows.
+    from app.services.profile_image_storage import MAX_INLINE_PAYLOAD_CHARS
+
+    if len(val) > MAX_INLINE_PAYLOAD_CHARS:
+        raise HTTPException(status_code=413, detail="Profile image payload is too large.")
+    return val
+
+
+@router.put("/profile-image", response_model=MeResponse)
+def update_profile_image(
+    body: ProfileImageUpdateRequest,
+    request: Request,
+    user_id: str = Depends(get_current_user),
+) -> MeResponse:
+    db = request.app.state.db
+    u = db.get_user(user_id)
+    if u is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    clean = _validate_profile_image_url(body.profile_image_url)
+    db.set_profile_image_url(user_id, clean)
+    u = db.get_user(user_id)
+    if u is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    return MeResponse(
+        user_id=u.id,
+        email=u.email,
+        tier=u.tier,
+        profile_image_url=u.profile_image_url,
+        consent=consent_status_from_user(u),
+    )
+
+
+@router.get("/skater-profile", response_model=SkaterProfileOut | None)
+def get_skater_profile(
+    request: Request,
+    user_id: str = Depends(get_current_user),
+) -> SkaterProfileOut | None:
+    """200 + JSON null before a row exists. 404 here would look like 'not deployed' to the client."""
+    db = request.app.state.db
+    row = db.get_skater_profile(user_id)
+    if row is None:
+        return None
+    return to_out(row)
+
+
+@router.patch("/skater-profile", response_model=SkaterProfileOut)
+def patch_skater_profile(
+    body: SkaterProfilePatchRequest,
+    request: Request,
+    user_id: str = Depends(get_current_user),
+) -> SkaterProfileOut:
+    db = request.app.state.db
+    patch = validate_patch(body)
+    row = db.upsert_skater_profile(
+        user_id,
+        natural_stance=patch.natural_stance,
+        skate_styles=patch.skate_styles,
+        primary_skate_style=patch.primary_skate_style,
+        experience_level=patch.experience_level,
+        age_range=patch.age_range,
+        city=patch.city,
+        home_park=patch.home_park,
+        favorite_brands=patch.favorite_brands,
+        complete_onboarding=patch.complete_onboarding,
+    )
+    return to_out(row)
+
+
+@router.delete("", status_code=202)
+async def delete_my_account(
+    request: Request,
+    user_id: str = Depends(get_current_user),
+) -> Response:
+    db = request.app.state.db
+    u = db.get_user(user_id)
+    if u is None:
+        return _account_deletion_queued_response()
+    if u.pending_deletion_at is not None:
+        return _account_deletion_queued_response()
+    enforce_delete_account_rate_limit(user_id)
+    # Capture V1 object keys BEFORE purge_user_owned_rows drops clip rows.
+    # Pending uploads often have storage_key with no clip_jobs row; without this
+    # the hard-delete worker would leave orphaned media in object storage.
+    v1_storage_keys = list_v1_clip_storage_keys(user_id)
+    db.purge_user_owned_rows(user_id)
+    db.delete_sessions_for_user(user_id)
+    db.anonymize_user_for_deletion(user_id)
+    await enqueue_hard_delete(
+        user_id,
+        datetime.now(timezone.utc),
+        extra_storage_keys=v1_storage_keys,
+    )
+    return _account_deletion_queued_response()
+
+
+@router.get("/export")
+@limiter.limit(export_limit_per_hour, key_func=signed_in_user_key)
+def export_my_data(
+    request: Request,
+    user_id: str = Depends(get_current_user),
+) -> dict:
+    db = request.app.state.db
+    repo = request.app.state.repo
+    from app.services.account_export import build_account_export
+
+    try:
+        return build_account_export(user_id, identity=db, repo=repo)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail="User not found.") from exc
+
+
+@router.get("/quota", response_model=AccountQuotaResponse)
+def get_account_quota(
+    request: Request,
+    user_id: str = Depends(get_current_user),
+) -> AccountQuotaResponse:
+    db = request.app.state.db
+    repo = request.app.state.repo
+    settings = get_settings()
+    tier = normalize_tier(db.get_user_tier(user_id))
+    user = db.get_user(user_id)
+    subscription_status = (user.subscription_status or "active") if user else "active"
+    trial_expires_at = user.trial_expires_at if user and tier == "trial" else None
+    bonus = db.get_bonus_analyses(user_id)
+    analyses_remaining = get_analyses_remaining(user) if user else 0
+    if not tier_has_feature(tier, "upload_clip"):
+        return AccountQuotaResponse(
+            tier=tier,
+            analyses_remaining=0,
+            trial_expires_at=trial_expires_at,
+            subscription_status=subscription_status,
+            bonus_analyses=bonus,
+            monthly_free_remaining=None,
+        )
+    if tier_has_unlimited_analyses(tier):
+        return AccountQuotaResponse(
+            tier=tier,
+            analyses_remaining=analyses_remaining,
+            trial_expires_at=trial_expires_at,
+            subscription_status=subscription_status,
+            bonus_analyses=bonus,
+            monthly_free_remaining=None,
+        )
+    used = repo.count_monthly_free_jobs(user_id)
+    cap = max(1, settings.rate_limit_free)
+    remaining = max(0, cap - used)
+    return AccountQuotaResponse(
+        tier=tier,
+        analyses_remaining=remaining,
+        trial_expires_at=trial_expires_at,
+        subscription_status=subscription_status,
+        bonus_analyses=bonus,
+        monthly_free_remaining=remaining,
+    )

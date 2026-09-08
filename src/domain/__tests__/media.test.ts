@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   formatClipLength,
   formatFileSize,
+  isLocalMediaUri,
   mayDeleteWorkingFile,
+  mediaViewState,
   parseReviewParams,
   reviewHref,
 } from "../media";
@@ -62,5 +64,24 @@ describe("media rules", () => {
     const params = parseReviewParams(tricky)!;
     const query = Object.fromEntries(new URLSearchParams(reviewHref(params).split("?")[1] ?? ""));
     expect(parseReviewParams(query)?.uri).toBe("file:///tmp/a b&c?d=1.mov");
+  });
+
+  it("loads, retries, or falls back instead of mounting a broken player", () => {
+    expect(isLocalMediaUri("file:///tmp/clip.mp4")).toBe(true);
+    expect(isLocalMediaUri("https://cdn.example/clip.mp4")).toBe(false);
+
+    expect(mediaViewState({ uri: null, fileExists: null, playerFailed: false })).toBe("missing");
+    expect(mediaViewState({ uri: "file:///tmp/clip.mp4", fileExists: null, playerFailed: false })).toBe(
+      "loading",
+    );
+    expect(mediaViewState({ uri: "file:///tmp/clip.mp4", fileExists: false, playerFailed: false })).toBe(
+      "failed",
+    );
+    expect(
+      mediaViewState({ uri: "https://cdn.example/clip.mp4", fileExists: null, playerFailed: true }),
+    ).toBe("failed");
+    expect(
+      mediaViewState({ uri: "https://cdn.example/clip.mp4", fileExists: null, playerFailed: false }),
+    ).toBe("ready");
   });
 });

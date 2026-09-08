@@ -53,17 +53,20 @@ function isTransient(kind: ApiErrorKind): boolean {
  */
 export async function closeSession() {
   const store = useSessionStore.getState();
-  const session = store.session;
+  const {session} = store;
   if (!session) return;
   const endedAt = session.endedAt ?? new Date().toISOString();
+  if (session.endedAt) {
+    store.setSession(null);
+    store.setTrick(null);
+    return;
+  }
+  store.setPendingEnd({ sessionId: session.id, endedAt });
   store.setSession(null);
   store.setTrick(null);
-  if (session.endedAt) return;
   const res = await endSessionApi(session.id, endedAt);
-  if (res.ok) {
+  if (res.ok || !isTransient(res.error.kind)) {
     useSessionStore.getState().setPendingEnd(null);
-  } else if (isTransient(res.error.kind)) {
-    useSessionStore.getState().setPendingEnd({ sessionId: session.id, endedAt });
   }
   return res;
 }

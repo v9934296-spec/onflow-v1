@@ -155,6 +155,85 @@
         ]
       }
     },
+    "/api/v1/account/skater-profile": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Get Skater Profile",
+        "description": "200 + JSON null before a row exists. 404 here would look like 'not deployed' to the client.",
+        "operationId": "get_skater_profile_api_v1_account_skater_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SkaterProfileOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Skater Profile Api V1 Account Skater Profile Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Patch Skater Profile",
+        "operationId": "patch_skater_profile_api_v1_account_skater_profile_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkaterProfilePatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkaterProfileOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/account": {
       "delete": {
         "tags": [
@@ -383,7 +462,7 @@
           "auth"
         ],
         "summary": "Set Clip Retention Consent Legacy",
-        "description": "Legacy alias \u2014 same storage as POST /clip-retention (users table).",
+        "description": "Legacy alias — same storage as POST /clip-retention (users table).",
         "operationId": "set_clip_retention_consent_legacy_api_v1_auth_clip_retention_consent_post",
         "requestBody": {
           "content": {
@@ -1185,6 +1264,16 @@
           }
         },
         "responses": {
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
           "501": {
             "description": "Successful Response",
             "content": {
@@ -1193,16 +1282,6 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response Add Participant Api V1 Sessions  Session Id  Participants Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1243,6 +1322,16 @@
           }
         ],
         "responses": {
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
           "501": {
             "description": "Successful Response",
             "content": {
@@ -1251,16 +1340,6 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response Remove Participant Api V1 Sessions  Session Id  Participants  Participant User Id  Delete"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1490,7 +1569,7 @@
           "feed"
         ],
         "summary": "Feed Stream",
-        "description": "SSE stream of feed updates for the signed-in user (contracts \u00a78.2).",
+        "description": "SSE stream of feed updates for the signed-in user (contracts §8.2).",
         "operationId": "feed_stream_api_v1_feed_stream_get",
         "security": [
           {
@@ -1669,7 +1748,7 @@
           "stats"
         ],
         "summary": "Get Progression Overview",
-        "description": "P.T.E. Tech 1.0 \u2014 full progression snapshot for dashboard.",
+        "description": "P.T.E. Tech 1.0 — full progression snapshot for dashboard.",
         "operationId": "get_progression_overview_api_v1_stats_progression_overview_get",
         "responses": {
           "200": {
@@ -1698,7 +1777,7 @@
           "stats"
         ],
         "summary": "Get Milestones",
-        "description": "P.T.E. Tech 1.0 \u2014 all milestones unlocked by this user.",
+        "description": "P.T.E. Tech 1.0 — all milestones unlocked by this user.",
         "operationId": "get_milestones_api_v1_stats_milestones_get",
         "responses": {
           "200": {
@@ -1730,7 +1809,7 @@
           "stats"
         ],
         "summary": "Get Whats Next",
-        "description": "P.T.E. Tech 1.0 \u2014 single focus recommendation from recent Gemini coaching.",
+        "description": "P.T.E. Tech 1.0 — single focus recommendation from recent Gemini coaching.",
         "operationId": "get_whats_next_api_v1_stats_progression_whats_next_get",
         "responses": {
           "200": {
@@ -1839,7 +1918,7 @@
           "stats"
         ],
         "summary": "Get Trick Progression",
-        "description": "P.T.E. Tech 1.0 \u2014 merged trick detail + compare + coaching timeline.",
+        "description": "P.T.E. Tech 1.0 — merged trick detail + compare + coaching timeline.",
         "operationId": "get_trick_progression_api_v1_stats_tricks__trick_name__progression_get",
         "security": [
           {
@@ -2927,18 +3006,18 @@
           },
           "duration_seconds": {
             "type": "number",
-            "maximum": 30.0,
-            "exclusiveMinimum": 0.0,
+            "maximum": 30,
+            "exclusiveMinimum": 0,
             "title": "Duration Seconds"
           },
           "width_px": {
             "type": "integer",
-            "exclusiveMinimum": 0.0,
+            "exclusiveMinimum": 0,
             "title": "Width Px"
           },
           "height_px": {
             "type": "integer",
-            "exclusiveMinimum": 0.0,
+            "exclusiveMinimum": 0,
             "title": "Height Px"
           },
           "content_type": {
@@ -2951,8 +3030,8 @@
           },
           "size_bytes": {
             "type": "integer",
-            "maximum": 104857600.0,
-            "exclusiveMinimum": 0.0,
+            "maximum": 104857600,
+            "exclusiveMinimum": 0,
             "title": "Size Bytes"
           },
           "client_hint_trick_id": {
@@ -3028,7 +3107,7 @@
         "properties": {
           "schema_version": {
             "type": "integer",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Schema Version",
             "default": 1
           },
@@ -3141,8 +3220,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 10.0,
-                "minimum": 0.0
+                "maximum": 10,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -3982,8 +4061,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 10.0,
-                "minimum": 0.0
+                "maximum": 10,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -4024,8 +4103,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10.0,
-                "minimum": 0.0
+                "maximum": 10,
+                "minimum": 0
               },
               {
                 "type": "null"
@@ -5527,12 +5606,144 @@
         "type": "object",
         "title": "SkateClipReviewBlockPayload"
       },
+      "SkaterProfileOut": {
+        "properties": {
+          "natural_stance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Natural Stance"
+          },
+          "skate_styles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skate Styles"
+          },
+          "primary_skate_style": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Skate Style"
+          },
+          "experience_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experience Level"
+          },
+          "age_range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age Range"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "home_park": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home Park"
+          },
+          "favorite_brands": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Favorite Brands"
+          },
+          "onboarding_completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Onboarding Completed At"
+          }
+        },
+        "type": "object",
+        "title": "SkaterProfileOut"
+      },
+      "SkaterProfilePatchRequest": {
+        "properties": {
+          "natural_stance": {
+            "title": "Natural Stance"
+          },
+          "skate_styles": {
+            "title": "Skate Styles"
+          },
+          "primary_skate_style": {
+            "title": "Primary Skate Style"
+          },
+          "experience_level": {
+            "title": "Experience Level"
+          },
+          "age_range": {
+            "title": "Age Range"
+          },
+          "city": {
+            "title": "City"
+          },
+          "home_park": {
+            "title": "Home Park"
+          },
+          "favorite_brands": {
+            "title": "Favorite Brands"
+          },
+          "complete_onboarding": {
+            "title": "Complete Onboarding",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "SkaterProfilePatchRequest",
+        "description": "Loose body — enum/limit/completion rules live in ``app.services.skater_profile``."
+      },
       "SyncRequest": {
         "properties": {
           "has_pro": {
             "type": "boolean",
             "title": "Has Pro",
-            "description": "RevenueCat SDK's view of the 'pro' entitlement. Informational only \u2014 ignored."
+            "description": "RevenueCat SDK's view of the 'pro' entitlement. Informational only — ignored."
           },
           "sync_tier": {
             "anyOf": [
@@ -5544,12 +5755,12 @@
               }
             ],
             "title": "Sync Tier",
-            "description": "Client-reported tier. Informational only \u2014 ignored; the webhook sets tier."
+            "description": "Client-reported tier. Informational only — ignored; the webhook sets tier."
           },
           "bonus_purchased": {
             "type": "integer",
             "title": "Bonus Purchased",
-            "description": "Client-reported Re-Up bonus count. Informational only \u2014 ignored; the webhook credits Re-Up packs.",
+            "description": "Client-reported Re-Up bonus count. Informational only — ignored; the webhook credits Re-Up packs.",
             "default": 0
           },
           "rc_app_user_id": {
@@ -5570,7 +5781,7 @@
           "has_pro"
         ],
         "title": "SyncRequest",
-        "description": "Client's view of entitlements after purchase or restore.\n\n``has_pro``, ``sync_tier`` and ``bonus_purchased`` are accepted for backward\ncompatibility but are **informational only** \u2014 the server never grants tier or\nbonus from these client claims. The RevenueCat webhook is the source of truth."
+        "description": "Client's view of entitlements after purchase or restore.\n\n``has_pro``, ``sync_tier`` and ``bonus_purchased`` are accepted for backward\ncompatibility but are **informational only** — the server never grants tier or\nbonus from these client claims. The RevenueCat webhook is the source of truth."
       },
       "SyncResponse": {
         "properties": {

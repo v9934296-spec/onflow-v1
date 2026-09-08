@@ -1,6 +1,6 @@
 # OnFlow v1 — Phase 0 docs
 
-File paths in OF-001–OF-005 that point at `services/api` refer to the Onflow Demo reference backend, not this client tree.
+File paths in OF-001–OF-005 that point at `services/api` now refer to **this** tree (`services/api`). The working FastAPI from the Onflow Demo was copied here on 2026-09-08. Railway deploy parity is still unverified.
 
 | Document | Purpose |
 |----------|---------|
@@ -48,4 +48,4 @@ The redesign supersedes spec §7 (screen presentation) and §10 (design system) 
 
 | Document | Purpose |
 |----------|---------|
-| [personalization-001-client.md](./personalization-001-client.md) | Client **implemented** against the designed contract. Age step **paused** (P2). Backend deliverables listed; endpoint not yet in `openapi.json`. |
+| [personalization-001-client.md](./personalization-001-client.md) | Client **implemented**. Backend GET/PATCH, export, and deletion **in this repo**. Age step **paused** (P2). Snapshot refreshed 2026-09-08. |

@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-01  
 **Against:** `onflow-product-build-spec (1).md` as it sits in this repo  
-**Client evidence:** this tree only. `services/api` is not here; OF-003–005 remain working-tree / Railway-unverified as already recorded.
+**Client evidence:** this tree only at audit time. **Addendum 2026-09-08:** `services/api` now lives in this repo. OF-003–005 remain Railway-unverified.
 
 This is the Phase 0 closeout inventory. It is **not** a new OF-007 ticket. Remaining work is either already ticketed, deferred with a standing rule, or an owner waiver.
 
@@ -42,7 +42,7 @@ The spec’s own trap is §8: *“Anything not listed here is `UNVERIFIED`.”* 
 | # | Gate | Status | Evidence |
 |---|------|--------|----------|
 | 1 | Generic 429 + `Retry-After`, no prose parsing | **Closed** | `src/api/client.ts` `parseRetryAfter` + `kind: "rate_limited"`. Copy is generic (`errors.ts`). `structuredCode` ignores detail strings that contain spaces (SlowAPI prose). |
-| 2 | Attempt-ID mutation | **Closed (working tree)** | OF-003. Railway unverified. This repo has no `services/api`. |
+| 2 | Attempt-ID mutation | **Closed (working tree)** | OF-003. Railway unverified. `services/api` is in this tree as of 2026-09-08. |
 | 3 | Failed-analysis quota release | **Closed (working tree)** | OF-004. Railway unverified. OF-004 itself recorded no production quota change. |
 | 4 | Uploads into ended sessions | **Closed (working tree)** | OF-005. Railway unverified. `clips.captured_at` migration must still deploy with app code. |
 | 5 | Evidence option (b), no per-component inference | **Closed** | Spec §9 option (b). `ReadinessBanner`. Truth tests. No `EvidenceTag`. |
@@ -92,7 +92,7 @@ Client already matches the launch rules that were sitting in the spec:
 | `vitest run` | **15 passed** (`centerAction`, `outbox`, `truth`) |
 | `npm run verify:phase0` as a single script | **Fail** until `files/` was ignored — garage `View` unused |
 
-Backend pytest from OF-003–005 was **not** re-run. `services/api` is not in this tree.
+Backend pytest from OF-003–005 was **not** re-run during this audit. `services/api` was copied into this tree on 2026-09-08.
 
 ---
 
