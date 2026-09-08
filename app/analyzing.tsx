@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { AppState, BackHandler, Text } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { color, space, textStyle } from "@/ui/tokens";
