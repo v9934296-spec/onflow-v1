@@ -1,0 +1,16 @@
+# CODEOWNERS is advisory until GitHub "Require review from Code Owners" is on.
+# App/runtime paths below are the ones that must not merge without that review.
+
+* @v9934296-spec
+
+# Product runtime — required owners once branch protection is enabled.
+/app/ @v9934296-spec
+/src/ @v9934296-spec
+/openapi/ @v9934296-spec
+/package.json @v9934296-spec
+/package-lock.json @v9934296-spec
+/app.json @v9934296-spec
+/eas.json @v9934296-spec
+/babel.config.js @v9934296-spec
+/tsconfig.json @v9934296-spec
+/vitest.config.ts @v9934296-spec

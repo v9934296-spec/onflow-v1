@@ -34,6 +34,14 @@ coverage/
 .tmp-boundary-check/
 repomix-output.xml
 
-# Python bytecode from vendored skill scripts
+# Python bytecode from local skill scripts
 __pycache__/
 *.pyc
+
+# Local agent / vendor skill trees — not product runtime
+.claude/
+.agents/
+skills-lock.json
+
+# Local PostgreSQL client binaries
+pgsql/

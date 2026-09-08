@@ -14,6 +14,7 @@ File paths in OF-001–OF-005 that point at `services/api` refer to the Onflow D
 | [phase-0-gate-audit.md](./phase-0-gate-audit.md) | Phase 0 final gate audit. Spec **Approved** 2026-09-01 (item 7 accepted unmeasured). |
 | [exp-001-compression.md](./exp-001-compression.md) | Launch-client EXP-001 device table (empty; 6 Mbps still a candidate). |
 | [launch-qa-checklist.md](./launch-qa-checklist.md) | Physical-device TestFlight GO / NO-GO matrix. |
+| [repo-hygiene.md](./repo-hygiene.md) | Vendor skills stay out; PR scope split; CODEOWNERS + required review. |
 
 ## Phase 0 ledger
 
