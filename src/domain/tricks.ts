@@ -54,15 +54,46 @@ export function rememberRecentId(existing: readonly string[], trickId: string, l
   return next.slice(0, limit);
 }
 
-export function popularFromRecent(
+/**
+ * How often each trick has actually been called, by trick id.
+ *
+ * Recency and frequency are different questions. The recent list is
+ * de-duplicated by definition, so counting it can only ever produce ones —
+ * which is why "Popular" used to be the recent list in a different order.
+ * This is a separate tally.
+ */
+export type TrickUsage = Readonly<Record<string, number>>;
+
+/** Kept bounded so a long-lived install cannot grow this without limit. */
+const USAGE_LIMIT = 60;
+
+export function bumpUsage(usage: TrickUsage, trickId: string): TrickUsage {
+  const next: Record<string, number> = { ...usage, [trickId]: (usage[trickId] ?? 0) + 1 };
+  const entries = Object.entries(next);
+  if (entries.length <= USAGE_LIMIT) return next;
+  return Object.fromEntries(
+    entries.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, USAGE_LIMIT),
+  );
+}
+
+/**
+ * Tricks called more than once, most-called first. A trick tried a single
+ * time is recent, not established, so `minUses` is 2 — otherwise this
+ * degenerates back into a second recent list.
+ */
+export function popularFromUsage(
   tricks: readonly CatalogTrick[],
-  recentIds: readonly string[],
+  usage: TrickUsage,
+  { minUses = 2, limit = 6 }: { minUses?: number; limit?: number } = {},
 ): CatalogTrick[] {
-  const counts = new Map<string, number>();
-  for (const id of recentIds) counts.set(id, (counts.get(id) ?? 0) + 1);
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
+  return Object.entries(usage)
+    .filter(([, count]) => count >= minUses)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .map(([id]) => tricks.find((t) => t.trickId === id))
     .filter((t): t is CatalogTrick => t != null)
-    .slice(0, 8);
+    .slice(0, limit);
+}
+
+export function usageCount(usage: TrickUsage, trickId: string): number {
+  return usage[trickId] ?? 0;
 }

@@ -59,6 +59,8 @@ export const kvKeys = {
   outbox: "onflow.outbox.v1",
   trickCatalog: "onflow.trickCatalog",
   recentTrickIds: "onflow.recentTrickIds",
+  /** How often each trick has been called. Frequency, not recency. */
+  trickUsage: "onflow.trickUsage.v1",
   /** A session the skater ended while the server was unreachable. */
   pendingSessionEnd: "onflow.pendingSessionEnd.v1",
 } as const;

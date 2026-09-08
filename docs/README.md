@@ -42,6 +42,7 @@ The redesign supersedes spec §7 (screen presentation) and §10 (design system) 
 | [redesign-002-session-screen.md](./redesign-002-session-screen.md) | Phase 2 slice 1 **implemented:** the canonical SESSION screen, persisted attempt queue, pending session-end retry. |
 | [redesign-003-review-step.md](./redesign-003-review-step.md) | Phase 2 slice 2 **implemented:** attempt review with real footage playback, USE CLIP / RETAKE / CANCEL, media-ownership rule. |
 | [redesign-004-result-screen.md](./redesign-004-result-screen.md) | Phase 2 slice 3 **implemented:** Result reordered around the read, footage restored, score demoted, LANDED / DIDN'T, loop closed. |
+| [redesign-005-trick-picker.md](./redesign-005-trick-picker.md) | Phase 2 slice 4 **implemented, closes Phase 2:** trick rows, segmented modifiers, and a real usage tally behind MOST CALLED. |
 
 ## Skater personalization
 
