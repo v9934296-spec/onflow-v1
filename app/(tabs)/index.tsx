@@ -1,14 +1,14 @@
 import { ScrollView, Text, View } from "react-native";
 import { color, radius, space, textStyle } from "@/ui/tokens";
-import { EmptyState, OfflineBadge, QueuedBadge, Skeleton } from "@/ui/components/States";
+import { EmptyState, QueuedBadge, Skeleton } from "@/ui/components/States";
+import { SyncStatus } from "@/ui/components/SyncStatus";
 import { Button } from "@/ui/components/Button";
 import { SessionCard, TrickCard, VideoThumbnail } from "@/ui/components/Cards";
 import { DeckMark, RailMark, ScreenHero, ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { useSessionStore } from "@/store/sessionStore";
 import { startFreeSkateSession } from "@/store/sessionActions";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { isApiConfigured, isOffline } from "@/store/net";
+import { useCallback, useState, type ReactNode } from "react";
 import { kv, kvKeys } from "@/store/kv";
 import { useAuthStore } from "@/store/authStore";
 import { listOutboxForUser, listRecoverable } from "@/store/outbox";
@@ -16,7 +16,10 @@ import { loadTrickCatalog, readRecentTrickIds } from "@/store/tricks";
 import type { CatalogTrick, OutboxRow } from "@/domain/models";
 import { greetingContext } from "@/domain/skaterProfile";
 import { useSkaterProfileStore } from "@/store/skaterProfileStore";
+import { useSessionAttemptsStore } from "@/store/sessionAttempts";
+import { reconcileOwnedWork } from "@/store/reconcile";
 import { styleCopy } from "@/ui/copy/personalization";
+import { useOffline } from "@/ui/hooks/useOffline";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -25,19 +28,20 @@ export default function HomeScreen() {
   const hydrating = useSessionStore((s) => s.hydrating);
   const userId = useAuthStore((s) => s.userId);
   const greeting = useSkaterProfileStore((s) => greetingContext(s.profile));
-  const [offline, setOffline] = useState(false);
+  const attemptQueue = useSessionAttemptsStore((s) => s.queue);
+  const retryDead = useSessionAttemptsStore((s) => s.retryDead);
+  const dismissDead = useSessionAttemptsStore((s) => s.dismissDead);
+  const sessionEndPending = useSessionStore((s) => s.pendingEnd != null);
+  const offline = useOffline();
   const [queued, setQueued] = useState(0);
   const [latest, setLatest] = useState<OutboxRow | null>(null);
   const [recentTricks, setRecentTricks] = useState<CatalogTrick[]>([]);
-
-  useEffect(() => {
-    setOffline(!isApiConfigured() || isOffline());
-  }, []);
 
   useFocusEffect(
     useCallback(() => {
       if (!userId) return;
       void (async () => {
+        await useSessionAttemptsStore.getState().load(userId, useSessionStore.getState().session?.id ?? null);
         const recoverable = await listRecoverable(userId);
         setQueued(recoverable.length);
         const all = await listOutboxForUser(userId);
@@ -140,7 +144,20 @@ export default function HomeScreen() {
         style={{ flex: 1, backgroundColor: color.bg }}
         contentContainerStyle={{ padding: space.xl, gap: space.lg }}
       >
-        {offline ? <OfflineBadge queued={queued} /> : null}
+        <SyncStatus
+          queue={attemptQueue}
+          clipsQueued={queued}
+          sessionEndPending={sessionEndPending}
+          offline={offline}
+          onRetry={() => {
+            if (!userId) return;
+            void retryDead(userId);
+            void reconcileOwnedWork(userId);
+          }}
+          onDismissDead={(key) => {
+            if (userId) dismissDead(userId, key);
+          }}
+        />
         <ScreenHero
           kicker={
             [greeting.style ? styleCopy[greeting.style].label : null, greeting.spot]

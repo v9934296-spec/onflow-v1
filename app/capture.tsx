@@ -19,7 +19,9 @@ import { AsphaltSurface } from "@/ui/components/AsphaltSurface";
 import { ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { useSessionStore } from "@/store/sessionStore";
 import { compressionContract } from "@/domain/compression";
+import { leaveDecision } from "@/domain/leaveGuard";
 import { reviewHref, type MediaKind } from "@/domain/media";
+import { useLeaveGuard } from "@/ui/hooks/useLeaveGuard";
 import type { ErrorKind } from "@/ui/copy/errors";
 
 const LOW_STORAGE_BYTES = 200 * 1024 * 1024;
@@ -41,6 +43,8 @@ export default function CaptureScreen() {
   const [error, setError] = useState<ErrorKind | null>(null);
   const [lowStorage, setLowStorage] = useState(false);
   const [largeFile, setLargeFile] = useState(false);
+
+  useLeaveGuard(leaveDecision({ screen: "capture", recording }), () => undefined);
 
   useEffect(() => {
     void FileSystem.getFreeDiskStorageAsync()
@@ -234,7 +238,12 @@ export default function CaptureScreen() {
             }}
           />
           <Button label="Library" variant="secondary" onPress={() => void pickLibrary(finish, setError)} />
-          <Button label="Close" variant="secondary" onPress={() => router.back()} />
+          <Button
+            label="Close"
+            variant="secondary"
+            disabled={recording}
+            onPress={() => router.back()}
+          />
         </View>
       </CameraView>
     </View>

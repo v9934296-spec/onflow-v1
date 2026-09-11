@@ -2,8 +2,9 @@
 
 **Date:** 2026-09-05  
 **Design:** "OnFlow V1 Skater Personalization Design" (approved 2026-09-05).  
-**Status:** Client implemented against the designed contract. **Backend not in
-this repository** — see "What the backend must deliver."
+**Status:** Client implemented against the designed contract. Backend lives in
+this repo at `services/api` (`GET`/`PATCH /api/v1/account/skater-profile`).
+Refresh `openapi/openapi.json` from a running API; do not hand-edit it.
 
 ## Owner decisions recorded here
 
@@ -21,10 +22,8 @@ PATCH /api/v1/account/skater-profile      200 → SkaterProfile
 ```
 
 `openapi/openapi.json` is a snapshot refreshed from a running API and is never
-hand-edited, so this endpoint is **not** in the snapshot yet. The runtime zod
-schema (`src/api/schemas/runtime.ts`) is the contract check until the backend
-is deployed and the snapshot is refreshed with `--from-url`. `api:check` stays
-green because the generated types are consumed by nothing.
+hand-edited. The skater-profile paths are in the snapshot as of 2026-09-08.
+`src/api/schemas/runtime.ts` remains the runtime contract check.
 
 Client interpretation of responses:
 
@@ -43,17 +42,24 @@ Client interpretation of responses:
 
 1. The two endpoints above, owner-scoped, with `GET` returning `200 null`
    (not 404) before a profile exists — the client reads 404 as "not deployed".
+   **Done** in `services/api`.
 2. Server-generated `onboarding_completed_at`, idempotent on repeat completion.
+   **Done.**
 3. **While P2 stands: completion must not require `age_range`.**
+   **Done** (`REQUIRE_AGE_RANGE_FOR_COMPLETION = false`).
 4. Bare-string error codes on 4xx (`detail: "profile_incomplete"`), so the
-   client can map them; prose is ignored by design.
+   client can map them; prose is ignored by design. **Done.**
 5. Profile in account export; deleted in the account-deletion transaction.
+   **Done.**
 6. The live `GET /tricks` category vocabulary (or a `styles` field on
    `TrickOut`) so `CATEGORY_STYLE_MAP` can be populated. Until then trick
-   ranking is the identity.
+   ranking is the identity. **Not done.**
 7. Optional: consider embedding `skater_profile` in `/account/me`, which
    already carries `consent` and `profile_image_url`; it would save one
-   round-trip on cold start. The client handles either shape.
+   round-trip on cold start. The client handles either shape. **Not done.**
+
+Completed-job analysis may include allowlisted profile fields (stance, styles,
+primary, level) in prompt notes. City, home park, and brands are never sent.
 
 ## Design clarifications applied
 
@@ -100,7 +106,8 @@ Client interpretation of responses:
 
 ## Not done here
 
-- Backend router, persistence, migration, export/deletion, AI-context loading.
-- `openapi.json` refresh (needs a deployed non-prod URL).
+- `openapi.json` refresh — **done locally** from `http://127.0.0.1:8000/openapi.json`. Re-run after API schema changes: `npm run api:generate -- --from-url http://127.0.0.1:8000/openapi.json`.
+- `GET /tricks` style vocabulary for ranking (`CATEGORY_STYLE_MAP`).
+- Embedding the profile on `/account/me`.
 - The age-range screen (P2).
 - Device verification.

@@ -16,10 +16,8 @@ import { queryClient } from "@/store/queryClient";
 import { useAuthStore } from "@/store/authStore";
 import { useSessionStore } from "@/store/sessionStore";
 import { useSkaterProfileStore } from "@/store/skaterProfileStore";
-import { useSessionAttemptsStore } from "@/store/sessionAttempts";
-import { retryPendingSessionEnd } from "@/store/sessionActions";
 import { initOutbox } from "@/store/outbox";
-import { drainRecoverable } from "@/store/upload";
+import { reconcileOwnedWork, subscribeReconcileTriggers } from "@/store/reconcile";
 import {
   isOnboardingComplete,
   onboardingSteps,
@@ -58,21 +56,23 @@ function AuthGate({ children }: { children: ReactNode }) {
   // Everything the phone owes the server is retried on sign-in and every foreground.
   useEffect(() => {
     if (phase !== "signed_in") return;
-    const settle = (current: string) => {
-      void drainRecoverable(current);
-      void useSessionAttemptsStore.getState().flush(current);
-      void retryPendingSessionEnd();
-    };
-    const id = useAuthStore.getState().userId;
-    if (id) settle(id);
-    const sub = AppState.addEventListener("change", (next) => {
-      if (next !== "active") return;
+    const settle = () => {
       const current = useAuthStore.getState().userId;
       if (!current) return;
-      settle(current);
-      if (useSkaterProfileStore.getState().status !== "loaded") void loadProfile(current);
+      void reconcileOwnedWork(current);
+    };
+    settle();
+    const sub = AppState.addEventListener("change", (next) => {
+      if (next !== "active") return;
+      settle();
+      const current = useAuthStore.getState().userId;
+      if (current && useSkaterProfileStore.getState().status !== "loaded") void loadProfile(current);
     });
-    return () => sub.remove();
+    const stopNet = subscribeReconcileTriggers(settle);
+    return () => {
+      sub.remove();
+      stopNet();
+    };
   }, [phase, loadProfile]);
 
   const route = resolveEntryRoute({ phase, profileStatus, completed });
@@ -130,7 +130,7 @@ export default function RootLayout() {
           <Stack.Screen name="capture" options={{ gestureEnabled: false }} />
           <Stack.Screen name="review" options={{ gestureEnabled: false }} />
           <Stack.Screen name="analyzing" options={{ gestureEnabled: false }} />
-          <Stack.Screen name="result" />
+          <Stack.Screen name="result" options={{ gestureEnabled: false }} />
           <Stack.Screen name="personalization" />
           <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
         </Stack>

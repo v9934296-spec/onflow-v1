@@ -37,3 +37,18 @@ repomix-output.xml
 # Python bytecode from vendored skill scripts
 __pycache__/
 *.pyc
+.pytest_cache/
+pytest-cache-files*/
+*.egg-info/
+
+# Local agent skill copies and lockfile — not product
+.agents/
+skills-lock.json
+
+# Local API runtime (never commit DB, venv, or uploads)
+services/api/.venv/
+services/api/venv/
+services/api/data/
+
+# Bundled Postgres installer leftovers (not part of the product)
+pgsql/

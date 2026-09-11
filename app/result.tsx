@@ -1,9 +1,17 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { attemptsForSession, mergeAttempts, nextAttemptNumber } from "@/domain/attempts";
+import { leaveDecision } from "@/domain/leaveGuard";
 import type { AnalysisResult, AttemptOutcome } from "@/domain/models";
+import type { CatalogErrorKind } from "@/domain/outbox";
+import {
+  completedResult,
+  interpretResultLoad,
+  jobPollDelayMs,
+  type ResultLoadPhase,
+} from "@/domain/resultLoad";
 import { pollJob } from "@/store/upload";
 import { queryClient } from "@/store/queryClient";
 import { recordOutcome } from "@/store/attempts";
@@ -12,16 +20,18 @@ import { useSessionAttemptsStore } from "@/store/sessionAttempts";
 import { useSessionStore } from "@/store/sessionStore";
 import { AttemptRead } from "@/ui/components/AttemptRead";
 import { FeedbackRow } from "@/ui/components/FeedbackRow";
-import { FootagePlayer } from "@/ui/components/FootagePlayer";
 import { ConfirmDialog } from "@/ui/components/Form";
+import { MediaStage } from "@/ui/components/MediaStage";
 import { OnFlowButton } from "@/ui/components/OnFlowButton";
 import { OnFlowDivider } from "@/ui/components/OnFlowDivider";
 import { OnFlowMeta } from "@/ui/components/OnFlowMeta";
 import { OutcomeSelector } from "@/ui/components/OutcomeSelector";
 import { ReadinessBanner } from "@/ui/components/ReadinessBanner";
 import { ScreenSafeArea } from "@/ui/components/ScreenChrome";
-import { ErrorPanel } from "@/ui/components/States";
+import { ErrorPanel, Skeleton } from "@/ui/components/States";
 import { TrickSlate } from "@/ui/components/TrickSlate";
+import { useLeaveGuard } from "@/ui/hooks/useLeaveGuard";
+import { useOffline } from "@/ui/hooks/useOffline";
 import { outcomeCopy, outcomePrompt } from "@/ui/copy";
 import { color, space, textStyle } from "@/ui/tokens";
 
@@ -43,20 +53,83 @@ export default function ResultScreen() {
   const session = useSessionStore((s) => s.session);
   const confirmed = useSessionAttemptsStore((s) => s.confirmed);
   const pending = useSessionAttemptsStore((s) => s.pending);
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(
-    () => queryClient.getQueryData<AnalysisResult>(["result", clipId]) ?? null,
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(() =>
+    completedResult(queryClient.getQueryData<AnalysisResult>(["result", clipId])),
   );
+  const [phase, setPhase] = useState<ResultLoadPhase>(analysis ? "ready" : "loading");
+  const [errorKind, setErrorKind] = useState<CatalogErrorKind | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
+  const [playbackKey, setPlaybackKey] = useState(0);
   const [outcome, setOutcome] = useState<AttemptOutcome | null>(null);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [saving, setSaving] = useState(false);
+  const offline = useOffline();
+  const wasOffline = useRef(offline);
 
   useEffect(() => {
-    if (analysis || !clipId) return;
-    void pollJob(clipId).then((res) => {
-      if (res.ok) setAnalysis(res.data);
-    });
-  }, [analysis, clipId]);
+    const hit = completedResult(queryClient.getQueryData<AnalysisResult>(["result", clipId]));
+    if (hit) {
+      setAnalysis(hit);
+      setPhase("ready");
+      setErrorKind(null);
+      return;
+    }
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const started = Date.now();
+
+    const tick = async () => {
+      const elapsedMs = Date.now() - started;
+      const waiting = interpretResultLoad({ clipId, poll: null, elapsedMs });
+      if (cancelled) return;
+      setPhase(waiting.phase);
+      setErrorKind(null);
+      if (!clipId) {
+        setPhase("failed");
+        setErrorKind("contract_error");
+        return;
+      }
+
+      const res = await pollJob(clipId);
+      if (cancelled) return;
+      const poll = res.ok
+        ? { ok: true as const, data: res.data }
+        : { ok: false as const, errorKind: res.error.kind };
+      const view = interpretResultLoad({ clipId, poll, elapsedMs: Date.now() - started });
+      setPhase(view.phase);
+      setErrorKind(view.errorKind);
+      if (view.analysis) {
+        setAnalysis(view.analysis);
+        queryClient.setQueryData(["result", clipId], view.analysis);
+      }
+      if (view.keepPolling) {
+        timer = setTimeout(() => void tick(), jobPollDelayMs(Date.now() - started));
+      }
+    };
+
+    void tick();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [clipId, retryNonce]);
+
+  useEffect(() => {
+    if (wasOffline.current && !offline && phase === "failed" && errorKind === "offline") {
+      setPhase("loading");
+      setRetryNonce((n) => n + 1);
+    }
+    wasOffline.current = offline;
+  }, [offline, phase, errorKind]);
+
+  const resultLeave = leaveDecision({
+    screen: "result",
+    busy: saving,
+    outcomeRecorded: outcome != null,
+  });
+  useLeaveGuard(phase === "ready" ? resultLeave : "allow", () => setConfirmLeave(true));
 
   // This clip's attempt number: the one being recorded now.
   const attemptNumber = useMemo(() => {
@@ -67,10 +140,44 @@ export default function ResultScreen() {
     );
   }, [trick, session, confirmed, pending]);
 
-  if (!analysis) {
+  if (phase !== "ready" || !analysis) {
     return (
       <ScreenSafeArea>
-        <ErrorPanel kind="contract_error" onPrimary={() => router.replace("/flow")} />
+        {phase === "failed" && errorKind ? (
+          <View style={{ flex: 1, justifyContent: "center" }}>
+            <ErrorPanel
+              kind={errorKind}
+              onPrimary={() => {
+                setPhase("loading");
+                setRetryNonce((n) => n + 1);
+              }}
+            />
+          </View>
+        ) : (
+          <View style={{ flex: 1, padding: space.lg, gap: space.md, justifyContent: "center" }}>
+            <Skeleton height={180} />
+            <Text style={{ ...textStyle.body, color: color.textSecondary }}>
+              {phase === "slow"
+                ? "Still reviewing. You can keep filming — this'll be in History when it's done."
+                : "Loading the read."}
+            </Text>
+          </View>
+        )}
+        <OnFlowDivider />
+        <View
+          style={{
+            paddingHorizontal: space.lg,
+            paddingTop: space.md,
+            paddingBottom: Math.max(insets.bottom, space.md),
+          }}
+        >
+          <OnFlowButton
+            label="Keep filming"
+            size="compact"
+            variant="secondary"
+            onPress={() => router.replace("/capture")}
+          />
+        </View>
       </ScreenSafeArea>
     );
   }
@@ -83,12 +190,13 @@ export default function ResultScreen() {
   return (
     <ScreenSafeArea>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: space.xl }}>
-        {analysis.videoPlaybackUrl ? (
-          <FootagePlayer
-            uri={analysis.videoPlaybackUrl}
-            accessibilityLabel={`${trick?.canonicalName ?? "Attempt"} footage`}
-          />
-        ) : null}
+        <MediaStage
+          uri={analysis.videoPlaybackUrl}
+          fileExists={null}
+          playbackKey={playbackKey}
+          accessibilityLabel={`${trick?.canonicalName ?? "Attempt"} footage`}
+          onRetry={() => setPlaybackKey((n) => n + 1)}
+        />
 
         <TrickSlate
           name={trick?.canonicalName ?? analysis.calledTrick ?? "Attempt"}
@@ -179,7 +287,7 @@ export default function ResultScreen() {
           size="hero"
           haptic
           loading={saving}
-          onPress={() => void leave("/capture")}
+          onPress={() => void go("/capture")}
         />
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           <OnFlowButton
@@ -187,7 +295,7 @@ export default function ResultScreen() {
             size="compact"
             variant="secondary"
             disabled={saving}
-            onPress={() => void leave("/trick")}
+            onPress={() => void go("/trick")}
           />
           <OnFlowButton
             label="End session"
@@ -242,7 +350,7 @@ export default function ResultScreen() {
     setSaving(false);
   }
 
-  async function leave(to: "/capture" | "/trick"): Promise<void> {
+  async function go(to: "/capture" | "/trick"): Promise<void> {
     if (!outcome) {
       setConfirmLeave(true);
       return;
