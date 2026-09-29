@@ -170,7 +170,7 @@ export const useBillingStore = create<BillingSlice>((set, get) => ({
     if (!item || get().purchasing || get().restoring) return false;
     set({ purchasing: identifier, message: null });
     try {
-      const { customerInfo } = await Purchases.purchasePackage({ aPackage: item });
+      const { customerInfo } = await Purchases.purchasePackage(item);
       if (!revenueCatHasPro(customerInfo)) {
         set({ purchasing: null, message: "Purchase completed without a Pro entitlement. Restore or try again." });
         return false;
