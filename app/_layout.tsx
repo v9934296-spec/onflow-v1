@@ -14,6 +14,7 @@ import {
 import { JetBrainsMono_400Regular } from "@expo-google-fonts/jetbrains-mono";
 import { queryClient } from "@/store/queryClient";
 import { useAuthStore } from "@/store/authStore";
+import { useBillingStore } from "@/store/billingStore";
 import { useSessionStore } from "@/store/sessionStore";
 import { useSkaterProfileStore } from "@/store/skaterProfileStore";
 import { initOutbox } from "@/store/outbox";
@@ -35,6 +36,8 @@ function AuthGate({ children }: { children: ReactNode }) {
   const phase = useAuthStore((s) => s.phase);
   const userId = useAuthStore((s) => s.userId);
   const hydrate = useAuthStore((s) => s.hydrate);
+  const identifyBilling = useBillingStore((s) => s.identify);
+  const disconnectBilling = useBillingStore((s) => s.disconnect);
   const profileStatus = useSkaterProfileStore((s) => s.status);
   const completed = useSkaterProfileStore((s) => isOnboardingComplete(s.profile));
   const draftStep = useSkaterProfileStore((s) => s.draftStep);
@@ -47,6 +50,14 @@ function AuthGate({ children }: { children: ReactNode }) {
     void hydrate();
     useSessionStore.getState().hydrateFromKv();
   }, [hydrate]);
+
+  useEffect(() => {
+    if (phase === "signed_in" && userId) {
+      void identifyBilling(userId);
+      return;
+    }
+    if (phase === "signed_out") void disconnectBilling();
+  }, [phase, userId, identifyBilling, disconnectBilling]);
 
   useEffect(() => {
     if (phase !== "signed_in" || !userId) return;
