@@ -66,6 +66,9 @@ def _generous_clip_abuse_limits_for_tests(monkeypatch: pytest.MonkeyPatch) -> No
     """Slowapi clip caps default to 10/hour — many tests initiate multiple uploads."""
     monkeypatch.setenv("ONFLOW_CLIP_RATE_LIMIT_PER_HOUR", "10000")
     monkeypatch.setenv("ONFLOW_CLIP_RATE_LIMIT_PER_DAY", "10000")
+    # The suite covers the provider review path; the launch default (off) is
+    # covered explicitly in test_analysis_providers_disabled.py.
+    monkeypatch.setenv("ONFLOW_ANALYSIS_PROVIDERS_ENABLED", "1")
     from app.core.config import get_settings
 
     get_settings.cache_clear()

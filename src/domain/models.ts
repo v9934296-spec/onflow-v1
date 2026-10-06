@@ -114,4 +114,12 @@ export interface OutboxRow {
   readonly attemptCount: number;
   readonly nextRetryAt: string | null;
   readonly errorKind: string | null;
+  /**
+   * The trick called when this clip was filmed. Snapshotted at enqueue so a
+   * resumed upload and a reopened result use the clip's own trick, not
+   * whatever is selected now. Optional: rows written before this field lack it.
+   */
+  readonly trick?: SelectedTrick | null;
+  /** The skater's recorded call on this clip, once made. Never inferred. */
+  readonly outcome?: AttemptOutcome | null;
 }

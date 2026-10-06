@@ -72,7 +72,8 @@ def health(db: Session = Depends(get_db)) -> dict[str, str | bool]:
         "db": "ok",
         "gemini_configured": gemini_ok,
         "twelvelabs_configured": tl_ok,
-        "clip_review_ready": gemini_ok and tl_ok,
+        "analysis_providers_enabled": settings.analysis_providers_enabled,
+        "clip_review_ready": settings.analysis_providers_enabled and gemini_ok and tl_ok,
     }
 
 

@@ -639,6 +639,34 @@ async def run_clip_job(
                 cam = _replace(cam, notes=notes)
 
             settings = get_settings()
+            if not settings.analysis_providers_enabled:
+                # Launch configuration: no Gemini / Twelve Labs call. Complete honestly
+                # with OpenCV checks only; finalize releases the quota (insufficient).
+                result = build_degraded_provider_failure_result(
+                    first,
+                    label,
+                    pipeline_reason="analysis_provider_disabled",
+                    provider_disabled=True,
+                )
+                logger.info("event=clip_job_completed_provider_disabled")
+                await finalize_completed_clip_job(
+                    job=job,
+                    repo=repo,
+                    result=result,
+                    job_id=job_id,
+                    effective_user_id=user_id or job.user_id,
+                    tricks_list=tricks_list,
+                    label=label,
+                    meta=meta,
+                    file_path=file_path,
+                    storage_key=storage_key,
+                    engine=engine,
+                    t_job_start=t_job,
+                    degraded=True,
+                    claim_token=claim_token,
+                )
+                return
+
             tier_norm = normalize_tier(job.tier)
             analysis_provider = resolve_analysis_provider_for_tier(tier_norm, settings)
             review_model = normalized_review_model_for_provider(analysis_provider)

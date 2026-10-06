@@ -103,7 +103,13 @@ class Settings(BaseSettings):
     # RevenueCat webhook secret (from RC dashboard → Webhooks → Authorization header)
     rc_webhook_secret: str = ""
 
-    # Gemini — required for completed clip jobs (see gemini_clip_analyzer).
+    # Launch switch (ONFLOW_ANALYSIS_PROVIDERS_ENABLED). Off: clip jobs never call
+    # Gemini or Twelve Labs; they complete with OpenCV video checks only
+    # (review_method=provider_disabled, readiness insufficient, quota released).
+    # This is the single integration point for turning a review provider back on.
+    analysis_providers_enabled: bool = False
+
+    # Gemini — required for completed clip jobs when providers are enabled.
     # Tier selection is centralized in ``app.core.tiers.resolve_gemini_model_for_tier``.
     gemini_api_key: str = ""
     # Legacy single-model override (``ONFLOW_GEMINI_MODEL`` / bare ``GEMINI_MODEL``).
@@ -200,12 +206,12 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "ONFLOW_REDIS_URL must be a redis:// or rediss:// URL in production/staging."
                 )
-            if not (self.twelvelabs_api_key or "").strip():
+            if self.analysis_providers_enabled and not (self.twelvelabs_api_key or "").strip():
                 raise ValueError(
                     "ONFLOW_TWELVELABS_API_KEY must be set when ONFLOW_ENV is "
                     "production, prod, or staging."
                 )
-            if not (self.gemini_api_key or "").strip():
+            if self.analysis_providers_enabled and not (self.gemini_api_key or "").strip():
                 raise ValueError(
                     "ONFLOW_GEMINI_API_KEY must be set when ONFLOW_ENV is "
                     "production, prod, or staging (free-tier analysis)."

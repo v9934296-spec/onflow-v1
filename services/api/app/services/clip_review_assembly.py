@@ -190,11 +190,14 @@ def build_degraded_provider_failure_result(
     *,
     pipeline_reason: str,
     pipeline_detail: str = "",
+    provider_disabled: bool = False,
 ) -> dict[str, Any]:
     """
     Honest completed-job payload when the main Gemini pipeline could not run or finish.
 
     Uses first-pass video metrics only — no mechanics review, cues, or normalized_review.
+    ``provider_disabled`` marks the launch configuration where no review provider is
+    called at all (settings.analysis_providers_enabled is False).
     """
     label = clip_label.strip() or "untagged"
     readiness: Readiness = "insufficient"
@@ -222,10 +225,15 @@ def build_degraded_provider_failure_result(
         if isinstance(line, str) and line.strip():
             observations.append(f"[Video pass] {line.strip()}")
 
-    proc: list[str] = [
-        "Automated video checks only below; the AI review service did not return a usable analysis for this clip.",
-        f"Pipeline reason code: {reason}.",
-    ]
+    if provider_disabled:
+        proc: list[str] = [
+            "Automated video checks only below; trick review is not enabled yet.",
+        ]
+    else:
+        proc = [
+            "Automated video checks only below; the AI review service did not return a usable analysis for this clip.",
+            f"Pipeline reason code: {reason}.",
+        ]
     if detail:
         proc.append(f"Detail (truncated if long): {detail}")
 
@@ -233,10 +241,17 @@ def build_degraded_provider_failure_result(
         "Full mechanics review was not generated; only technical video signals are available.",
     ]
 
-    summary = (
-        "We could not complete AI review for this clip (the review service did not finish). "
-        "What you see below is from our automated video check only — not a trick assessment."
-    )
+    if provider_disabled:
+        summary = (
+            "Trick review isn't available yet, so there is no score or coaching for this clip. "
+            "What you see below is from our automated video check only — not a trick assessment. "
+            "Your own call on the attempt is the record."
+        )
+    else:
+        summary = (
+            "We could not complete AI review for this clip (the review service did not finish). "
+            "What you see below is from our automated video check only — not a trick assessment."
+        )
 
     return {
         "schema_version": RESULT_SCHEMA_VERSION,
@@ -254,7 +269,7 @@ def build_degraded_provider_failure_result(
         "first_actionable_cue_shown": None,
         "first_drill_shown": None,
         "normalized_review": None,
-        "review_method": "provider_unavailable",
+        "review_method": "provider_disabled" if provider_disabled else "provider_unavailable",
         "gemini_used": False,
         "technical_limit_summary": None,
         "primary_issue_key": None,

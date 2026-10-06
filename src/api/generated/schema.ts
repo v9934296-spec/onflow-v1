@@ -1124,6 +1124,11 @@ export interface components {
              * @description When the skater filmed the clip. Required for the launch client so an ended session can accept a delayed upload only when capture predates ended_at. Omitted by onflow-lite; the 24h window still applies.
              */
             captured_at?: string | null;
+            /**
+             * Stance
+             * @description Skater-selected stance for the called trick; passed to review metadata.
+             */
+            stance?: ("regular" | "fakie" | "switch" | "nollie") | null;
         };
         /** ClipInitiateUploadResponse */
         ClipInitiateUploadResponse: {

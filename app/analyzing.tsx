@@ -9,7 +9,7 @@ import { ErrorPanel } from "@/ui/components/States";
 import { AsphaltSurface } from "@/ui/components/AsphaltSurface";
 import { ScreenHeader, ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { getOutbox } from "@/store/outbox";
-import { pollJob, runOutboxRow } from "@/store/upload";
+import { pollJob, retryOutboxRow, runOutboxRow } from "@/store/upload";
 import { queryClient } from "@/store/queryClient";
 import { analyzingFailureKind, analyzingPhase, isTerminal, progressFraction } from "@/domain/outbox";
 import type { AnalysisResult, OutboxRow } from "@/domain/models";
@@ -22,6 +22,8 @@ export default function AnalyzingScreen() {
   const [job, setJob] = useState<AnalysisResult | null>(null);
   const [slow, setSlow] = useState(false);
   const [retryNonce, setRetryNonce] = useState(0);
+  /** Polling gave up while the server still reports the job in flight. */
+  const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setSlow(true), 45_000);
@@ -98,7 +100,10 @@ export default function AnalyzingScreen() {
       }
       if (latest && isTerminal(latest)) return;
       if (latest?.state === "failed_retryable") return;
-      if (Date.now() - started > 5 * 60_000) return;
+      if (Date.now() - started > 5 * 60_000) {
+        setTimedOut(true);
+        return;
+      }
       delay = Date.now() - started > 30_000 ? 5000 : 2000;
       timer = setTimeout(() => void tick(), delay);
     };
@@ -122,7 +127,7 @@ export default function AnalyzingScreen() {
     return () => sub.remove();
   }, [router]);
 
-  const phase = analyzingPhase(row?.state ?? "pending", job?.status ?? null);
+  const phase = timedOut ? "FAILED" : analyzingPhase(row?.state ?? "pending", job?.status ?? null);
   const fraction = row ? progressFraction(row) : null;
   const failureKind: ErrorKind = asErrorKind(
     analyzingFailureKind(row?.errorKind ?? null, job?.failureReason ?? null),
@@ -151,7 +156,8 @@ export default function AnalyzingScreen() {
       if (!localId) return;
       setJob(null);
       setSlow(false);
-      void runOutboxRow(localId).then(() => setRetryNonce((n) => n + 1));
+      setTimedOut(false);
+      void retryOutboxRow(localId).then(() => setRetryNonce((n) => n + 1));
       return;
     }
     router.replace("/capture");

@@ -7,8 +7,10 @@ import {
   classifyHttpFailure,
   isTransientTransportKind,
   nextRetryAt,
+  retryFrom,
   toCatalogErrorKind,
 } from "../domain/outbox";
+import { stanceWire } from "../domain/tricks";
 import { compressionContract } from "../domain/compression";
 import { getOutbox, listRecoverable, upsertOutbox } from "./outbox";
 import { mintClipId } from "../domain/mappers/ids";
@@ -110,6 +112,8 @@ async function initiatePipeline(existing: OutboxRow): Promise<OutboxRow> {
     contentType: row.mimeType,
     sizeBytes: row.sizeBytes,
     capturedAt: row.capturedAt,
+    clientHintTrickId: row.trick?.trickId,
+    stance: stanceWire(row.trick?.stance),
   });
   if (!initiated.ok) {
     row = applyHttpFailure(row, initiated.error, "upload_failed_retryable");
@@ -134,10 +138,15 @@ async function initiatePipeline(existing: OutboxRow): Promise<OutboxRow> {
 
   row = { ...row, state: "requesting_analysis", bytesUploaded: row.sizeBytes };
   await upsertOutbox(row);
-  return completePipeline(row);
+  return completePipeline(row, false);
 }
 
-async function completePipeline(existing: OutboxRow): Promise<OutboxRow> {
+/**
+ * `allowReupload`: a 404 means the server no longer holds this upload (a failed
+ * job's object is deleted; its charge was already released). Start one fresh
+ * upload from the local file rather than retrying a clip that cannot complete.
+ */
+async function completePipeline(existing: OutboxRow, allowReupload = true): Promise<OutboxRow> {
   if (!existing.clipId) return initiatePipeline(existing);
   let row: OutboxRow = { ...existing, state: "requesting_analysis", errorKind: null };
   await upsertOutbox(row);
@@ -148,6 +157,9 @@ async function completePipeline(existing: OutboxRow): Promise<OutboxRow> {
       row = { ...row, state: "analyzing", errorKind: null };
       await upsertOutbox(row);
       return row;
+    }
+    if (completed.error.status === 404 && allowReupload) {
+      return initiatePipeline({ ...row, clipId: null, bytesUploaded: null });
     }
     row = applyHttpFailure(row, completed.error, "upload_failed_retryable");
     await upsertOutbox(row);
@@ -179,6 +191,25 @@ async function settleJob(row: OutboxRow): Promise<OutboxRow> {
     return next;
   }
   return row;
+}
+
+/** Skater-initiated retry from Analyzing. No-op when retrying cannot help. */
+export async function retryOutboxRow(localId: string): Promise<OutboxRow | null> {
+  const row = await getOutbox(localId);
+  if (!row) return null;
+  const next = retryFrom(row);
+  if (!next) return row;
+  await upsertOutbox(next);
+  return runOutboxRow(localId);
+}
+
+export async function setOutboxOutcome(
+  localId: string,
+  outcome: "landed" | "missed",
+): Promise<void> {
+  const row = await getOutbox(localId);
+  if (!row) return;
+  await upsertOutbox({ ...row, outcome });
 }
 
 export async function pollJob(clipId: string) {
