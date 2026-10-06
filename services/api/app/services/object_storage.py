@@ -1,7 +1,6 @@
 """Object storage abstraction for clip uploads."""
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import BinaryIO, Protocol
 
@@ -185,10 +184,11 @@ def build_storage() -> ObjectStorage:
     from app.core.config import get_settings
 
     settings = get_settings()
-    bucket = os.environ.get("ONFLOW_S3_BUCKET", "").strip()
-    endpoint = os.environ.get("ONFLOW_S3_ENDPOINT", "").strip()
-    access = os.environ.get("ONFLOW_S3_ACCESS_KEY", "").strip()
-    secret = os.environ.get("ONFLOW_S3_SECRET_KEY", "").strip()
+    # Resolved by Settings: ONFLOW_S3_* first, then the conventional S3_* names.
+    bucket = (settings.s3_bucket or "").strip()
+    endpoint = (settings.s3_endpoint or "").strip()
+    access = (settings.s3_access_key or "").strip()
+    secret = (settings.s3_secret_key or "").strip()
 
     if bucket and endpoint and access and secret:
         logger.info("Using S3 storage bucket=%s endpoint=%s", bucket, endpoint)

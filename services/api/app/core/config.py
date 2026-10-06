@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -7,6 +8,23 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from app.core.gemini_config import GeminiNotConfiguredError, get_gemini_api_key
 
 _API_DIR = Path(__file__).resolve().parent.parent.parent
+
+# Conventional S3 variable names accepted when the ONFLOW_S3_* name is unset.
+# Production Railway stores the R2 credentials under these names (some saved
+# with a stray leading space), so keys are matched after stripping whitespace.
+_S3_ENV_FALLBACKS: dict[str, str] = {
+    "s3_bucket": "S3_BUCKET",
+    "s3_endpoint": "S3_ENDPOINT",
+    "s3_access_key": "S3_ACCESS_KEY_ID",
+    "s3_secret_key": "S3_SECRET_ACCESS_KEY",
+}
+
+
+def _env_by_stripped_name(name: str) -> str:
+    for key, value in os.environ.items():
+        if key.strip() == name:
+            return (value or "").strip()
+    return ""
 
 
 class Settings(BaseSettings):
@@ -145,6 +163,13 @@ class Settings(BaseSettings):
     db_pool_size: int = 10
     db_max_overflow: int = 5
     db_pool_recycle: int = 1800
+
+    @model_validator(mode="after")
+    def _s3_env_fallback(self) -> "Settings":
+        for field, fallback in _S3_ENV_FALLBACKS.items():
+            if not (getattr(self, field) or "").strip():
+                object.__setattr__(self, field, _env_by_stripped_name(fallback))
+        return self
 
     @model_validator(mode="after")
     def _gemini_env_fallback(self) -> "Settings":

@@ -145,6 +145,16 @@ def _worker_job_timeout() -> int:
         return 300
 
 
+def _worker_redis_settings():
+    """ARQ reads ``redis_settings`` from the class ``__dict__``; a property would
+    hand ARQ the property object itself. ``None`` (no URL) lets the API import
+    this module; the worker then fails loudly connecting to the ARQ default."""
+    from arq.connections import RedisSettings
+
+    url = (get_settings().redis_url or "").strip()
+    return RedisSettings.from_dsn(url) if url else None
+
+
 def _worker_cron_jobs():
     from arq import cron
 
@@ -165,12 +175,4 @@ class WorkerSettings:
     job_timeout = _worker_job_timeout()
     max_tries = 2
     retry_delay = 5
-
-    @property
-    def redis_settings(self):
-        from arq.connections import RedisSettings
-
-        settings = get_settings()
-        if not settings.redis_url:
-            raise RuntimeError("ONFLOW_REDIS_URL must be set for the ARQ worker.")
-        return RedisSettings.from_dsn(settings.redis_url)
+    redis_settings = _worker_redis_settings()
