@@ -33,6 +33,8 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         env_prefix="ONFLOW_",
         extra="ignore",
+        # A failed production check must never echo secret values into logs.
+        hide_input_in_errors=True,
     )
 
     cors_origins: str = ""  # must be set via ONFLOW_CORS_ORIGINS in production; empty = deny all non-local

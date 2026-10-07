@@ -58,3 +58,23 @@ def test_build_storage_uses_resolved_settings(monkeypatch: pytest.MonkeyPatch) -
         assert isinstance(build_storage(), S3Storage)
     finally:
         get_settings.cache_clear()
+
+
+def test_production_config_error_never_echoes_secret_values(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear(monkeypatch)
+    for key, value in {
+        "ONFLOW_ENV": "production",
+        "ONFLOW_DATABASE_URL": "postgresql://u:p@h/db",
+        "ONFLOW_JWT_SECRET": "jwt-secret-must-not-leak",
+        "ONFLOW_ADMIN_EMAILS": "admin@onflow.test",
+        "ONFLOW_REDIS_URL": "redis://h:6379",
+        "ONFLOW_CORS_ORIGINS": "https://onflow.app",
+        "ONFLOW_RC_WEBHOOK_SECRET": "rc-secret-must-not-leak",
+        "ONFLOW_RC_PRO_PRODUCT_IDS": "pro",
+    }.items():
+        monkeypatch.setenv(key, value)
+    with pytest.raises(Exception) as excinfo:
+        Settings()
+    message = str(excinfo.value)
+    assert "ONFLOW_S3_BUCKET" in message
+    assert "must-not-leak" not in message
