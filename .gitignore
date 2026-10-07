@@ -43,6 +43,7 @@ pytest-cache-files*/
 
 # Local agent skill copies and lockfile — not product
 .agents/
+.claude/
 skills-lock.json
 
 # Local API runtime (never commit DB, venv, or uploads)

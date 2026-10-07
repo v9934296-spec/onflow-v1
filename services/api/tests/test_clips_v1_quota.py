@@ -47,7 +47,30 @@ def _job_quota_source(clip_id: str) -> str | None:
         return job.quota_source
 
 
-def test_complete_upload_records_quota_source(authed_client: TestClient) -> None:
+def test_complete_upload_records_quota_source(
+    authed_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.services import clip_worker
+
+    monkeypatch.setattr(
+        clip_worker,
+        "analyze_video_first_pass",
+        lambda _path: {
+            "video_readable": True,
+            "duration_seconds": 4.0,
+            "fps": 30.0,
+            "frame_count_estimated": 120,
+            "frames_sampled": 12,
+            "motion_detected": True,
+            "mean_brightness_0_1": 0.5,
+            "laplacian_var_mean": 140.0,
+            "review_readiness": "usable",
+            "observations": [],
+            "processing_notes": [],
+            "review_summary_base": "ok",
+        },
+    )
+
     initiated = _initiate(authed_client)
     clip_id = initiated["clip_id"]
     _write_local_upload(authed_client, initiated["storage_key"])

@@ -40,11 +40,22 @@ Latest personalization revision: `20260908_skater_profiles`.
 
 ## Tests
 
+From repo root (matches CI):
+
 ```powershell
-python -m pytest tests/test_skater_profile.py -q
+npm run api:test
 ```
 
-The full suite is large (OpenCV, live Gemini opt-in). Run a named file unless you mean to wait.
+From this directory:
+
+```powershell
+python -m pytest tests/test_skater_profile.py -q
+python -m pytest tests -q
+```
+
+GitHub Actions runs `python -m pytest tests -q` on every push/PR (job `api`). Live Gemini (`test_gemini_integration.py`) and token regression (`tests/regression/`) skip unless you set `ONFLOW_GEMINI_API_KEY` / `GEMINI_REGRESSION_ENABLED=1`.
+
+The full suite is large (OpenCV). Run a named file unless you mean to wait.
 
 ## Deploy
 

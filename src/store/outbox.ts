@@ -84,3 +84,9 @@ export function newLocalId(): LocalId {
     globalThis.crypto?.randomUUID?.() ?? `local-${Date.now()}-${Math.random()}`;
   return mintLocalId(id);
 }
+
+/** Clears in-memory outbox state (Vitest only — module singleton). */
+export function resetOutboxStoreForTests(): void {
+  rows.clear();
+  hydrated = false;
+}
