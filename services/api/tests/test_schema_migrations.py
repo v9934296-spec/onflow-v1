@@ -76,6 +76,27 @@ def test_ensure_creates_missing_version_table_at_supported_width() -> None:
         connection.commit()
 
 
+def test_ensure_leaves_no_open_transaction_when_already_wide() -> None:
+    """Production state after the first widen: an inspect-only pass must not
+    leave an autobegun transaction, or Alembic never commits the upgrade and
+    every migration silently rolls back on connection close."""
+    engine = create_engine("sqlite://")
+    with engine.connect() as connection:
+        ensure_alembic_version_num_width(connection)  # creates at full width
+        assert not connection.in_transaction()
+        ensure_alembic_version_num_width(connection)  # already wide: no-op
+        assert not connection.in_transaction()
+
+
+def test_env_ends_inspection_transaction_before_migrations() -> None:
+    source = _ENV_PY.read_text(encoding="utf-8")
+    online = source.split("def run_migrations_online", 1)[1]
+    assert "connection.commit()" in online
+    assert online.index("ensure_alembic_version_num_width(connection)") < online.index(
+        "connection.commit()"
+    ) < online.index("context.begin_transaction()")
+
+
 def test_finalize_helper_exists_in_clip_worker() -> None:
     from app.services import clip_worker  # pyright: ignore[reportMissingImports]
 

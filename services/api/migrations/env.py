@@ -78,6 +78,11 @@ def run_migrations_online() -> None:
         # Widen/create version_num before Alembic writes a revision id.
         # Production is VARCHAR(32); 20260804_attempt_sync_immutability is 34.
         ensure_alembic_version_num_width(connection)
+        # The width check inspects the table, which autobegins a transaction
+        # (SQLAlchemy 2.0). Left open, Alembic treats it as caller-owned, never
+        # commits, and leaving connect() rolls every migration back silently.
+        if connection.in_transaction():
+            connection.commit()
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
