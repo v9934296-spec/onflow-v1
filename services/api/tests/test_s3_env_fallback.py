@@ -71,6 +71,7 @@ def test_production_config_error_never_echoes_secret_values(monkeypatch: pytest.
         "ONFLOW_CORS_ORIGINS": "https://onflow.app",
         "ONFLOW_RC_WEBHOOK_SECRET": "rc-secret-must-not-leak",
         "ONFLOW_RC_PRO_PRODUCT_IDS": "pro",
+        "ONFLOW_ANALYSIS_PROVIDERS_ENABLED": "0",
     }.items():
         monkeypatch.setenv(key, value)
     with pytest.raises(Exception) as excinfo:
