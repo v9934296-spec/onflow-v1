@@ -8,12 +8,18 @@ import { AsphaltBackdrop } from "./AsphaltSurface";
 export function ScreenSafeArea({
   children,
   style,
+  testID,
 }: {
   children: ReactNode;
   style?: ViewStyle;
+  testID?: string;
 }) {
   return (
-    <SafeAreaView edges={["top"]} style={[{ flex: 1, backgroundColor: color.bg }, style]}>
+    <SafeAreaView
+      testID={testID}
+      edges={["top"]}
+      style={[{ flex: 1, backgroundColor: color.bg }, style]}
+    >
       {children}
     </SafeAreaView>
   );

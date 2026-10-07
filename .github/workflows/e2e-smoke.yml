@@ -1,0 +1,18 @@
+# Manual Maestro smoke — not wired to push/PR (needs macOS + iOS Simulator + installed build).
+name: e2e-smoke
+
+on:
+  workflow_dispatch:
+
+jobs:
+  maestro-smoke:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Maestro CLI
+        run: curl -Ls "https://get.maestro.mobile.dev" | bash
+      - name: Smoke test (placeholder)
+        run: |
+          echo "Install a preview/dev build (bundle com.onflow.lite) on the booted simulator, then:"
+          echo "  maestro test .maestro/smoke-sign-in.yaml"
+          echo "Wire EAS artifact download + xcrun simctl install here when preview builds are automated."

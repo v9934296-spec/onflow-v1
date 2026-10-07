@@ -1,0 +1,4 @@
+# Maestro E2E — local smoke only (see README § E2E smoke).
+# Requires a dev or preview build installed on simulator/device: com.onflow.lite
+flows:
+  - smoke-sign-in.yaml

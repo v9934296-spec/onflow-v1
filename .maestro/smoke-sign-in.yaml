@@ -1,0 +1,10 @@
+appId: com.onflow.lite
+---
+# Fresh session so AuthGate lands on sign-in (not cached MMKV session).
+- launchApp:
+    clearState: true
+    clearKeychain: true
+- assertVisible:
+    id: sign-in-screen
+- assertVisible: "ONFLOW"
+- assertVisible: "Sign in with Apple"

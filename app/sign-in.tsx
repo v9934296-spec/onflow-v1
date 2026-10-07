@@ -11,7 +11,10 @@ export default function SignInScreen() {
   const [error, setError] = useState(false);
 
   return (
-    <ScreenSafeArea style={{ padding: space.xxl, justifyContent: "center", gap: space.xl }}>
+    <ScreenSafeArea
+      testID="sign-in-screen"
+      style={{ padding: space.xxl, justifyContent: "center", gap: space.xl }}
+    >
       <ScreenHero kicker="OnFlow" title="ONFLOW">
         <Text style={{ ...textStyle.body, color: color.textSecondary }}>
           Sign in with Apple. Cancellation returns you here. Your footage stays on the account that filmed it.
