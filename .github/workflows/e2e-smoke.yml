@@ -1,4 +1,4 @@
-# Manual Maestro smoke — not wired to push/PR (needs macOS + iOS Simulator + installed build).
+# Manual Maestro smoke on macOS (iOS Simulator + EAS preview build).
 name: e2e-smoke
 
 on:
@@ -7,12 +7,36 @@ on:
 jobs:
   maestro-smoke:
     runs-on: macos-latest
+    timeout-minutes: 45
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EAS_IOS_PROFILE: preview
+      EAS_IOS_SIMULATOR: "true"
     steps:
       - uses: actions/checkout@v4
-      - name: Maestro CLI
-        run: curl -Ls "https://get.maestro.mobile.dev" | bash
-      - name: Smoke test (placeholder)
+
+      - name: Require EXPO_TOKEN
         run: |
-          echo "Install a preview/dev build (bundle com.onflow.lite) on the booted simulator, then:"
-          echo "  maestro test .maestro/smoke-sign-in.yaml"
-          echo "Wire EAS artifact download + xcrun simctl install here when preview builds are automated."
+          if [ -z "${EXPO_TOKEN}" ]; then
+            echo "::error::Missing repository secret EXPO_TOKEN. Create an Expo access token (expo.dev → Account settings → Access tokens) and add it under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install Maestro CLI
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
+
+      - name: Download iOS preview simulator build (EAS)
+        run: npm run download:ios:preview
+
+      - name: Boot simulator and install app
+        run: npm run install:ios:simulator
+
+      - name: Maestro smoke
+        run: npm run e2e:smoke

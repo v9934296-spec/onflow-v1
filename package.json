@@ -21,6 +21,8 @@
     "e2e:smoke": "maestro test .maestro/smoke-sign-in.yaml",
     "bundle:ios": "expo export --platform ios --output-dir dist-ios",
     "download:ios": "node scripts/download-eas-ios.mjs",
+    "download:ios:preview": "node scripts/download-eas-ios.mjs preview --simulator",
+    "install:ios:simulator": "node scripts/install-ios-simulator.mjs",
     "build:preview:ios": "eas build --profile preview --platform ios",
     "build:production:ios": "eas build --profile production --platform ios",
     "submit:ios": "eas submit --profile production --platform ios --latest"

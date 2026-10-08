@@ -13,6 +13,9 @@
       "environment": "preview",
       "env": {
         "EXPO_PUBLIC_REVENUECAT_API_KEY": "appl_cnWPAFGtArxyhbxXCLJPIQSUQoJ"
+      },
+      "ios": {
+        "simulator": true
       }
     },
     "production": {

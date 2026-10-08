@@ -17,4 +17,8 @@ No Detox setup in this repo. Minimal Maestro flow: launch with a clean app state
 2. Install an iOS Simulator build (e.g. `npm run build:preview:ios` via EAS, or run a local dev client with the same bundle ID).
 3. `npm run e2e:smoke` (or `maestro test .maestro/smoke-sign-in.yaml`).
 
-CI: optional manual run via **Actions → e2e-smoke** (`.github/workflows/e2e-smoke.yml`); wiring artifact install + `maestro test` is the next step once a stable preview build is published.
+CI: manual **Actions → e2e-smoke** (`.github/workflows/e2e-smoke.yml`) on `macos-latest` — installs Maestro, downloads the latest finished **preview simulator** iOS build via EAS (`npm run download:ios:preview`), installs it on a booted iPhone simulator, then runs `npm run e2e:smoke`.
+
+**GitHub secret (required for CI):** `EXPO_TOKEN` — Expo access token with access to this EAS project ([expo.dev](https://expo.dev) → Account settings → Access tokens). Without it the workflow fails at the first step with an explicit error.
+
+If download fails with no simulator builds, run `npm run build:preview:ios` once (preview profile uses `ios.simulator` in `eas.json`) and re-run the workflow.

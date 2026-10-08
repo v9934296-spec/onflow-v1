@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 /**
- * Download the latest finished production iOS IPA from the linked EAS project
- * (same Expo project as Onflow Demo: onflow-lite / com.onflow.lite).
+ * Download the latest finished iOS build artifact from the linked EAS project
+ * (onflow-lite / com.onflow.lite).
  *
- * Usage: npm run download:ios
+ * Env: EAS_IOS_PROFILE (default production), EAS_IOS_SIMULATOR=true to require simulator builds.
+ *
+ * Usage: npm run download:ios | npm run download:ios:preview
  */
 import { execFileSync } from "node:child_process";
 import { createWriteStream, mkdirSync } from "node:fs";
@@ -13,6 +15,23 @@ import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const CLI = parseCli(process.argv.slice(2));
+
+function parseCli(args) {
+  let profile = null;
+  let simulator = false;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === "--simulator") {
+      simulator = true;
+    } else if (arg === "--profile" && args[i + 1]) {
+      profile = args[++i];
+    } else if (!arg.startsWith("-")) {
+      profile = arg;
+    }
+  }
+  return { profile, simulator };
+}
 
 function runEas(args) {
   try {
@@ -99,10 +118,34 @@ function mainWhoami() {
     console.log(`EAS account: ${who}`);
     return who;
   } catch (error) {
-    throw new Error(
-      `Not logged in to EAS. Run \`npx eas-cli login\` in this folder, then retry.\n${error.message}`,
-    );
+    const hint = process.env.EXPO_TOKEN
+      ? "EXPO_TOKEN is set but EAS rejected it — check the secret value and project access."
+      : "Set EXPO_TOKEN (CI) or run `npx eas-cli login` locally, then retry.";
+    throw new Error(`${hint}\n${error.message}`);
   }
+}
+
+function targetProfile() {
+  if (CLI.profile) return String(CLI.profile).toLowerCase();
+  return String(process.env.EAS_IOS_PROFILE ?? "production").toLowerCase();
+}
+
+function requireSimulatorBuild() {
+  if (CLI.simulator) return true;
+  const v = String(process.env.EAS_IOS_SIMULATOR ?? "").toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}
+
+function isSimulatorBuild(build) {
+  return build.simulator === true || build.buildMode === "simulator";
+}
+
+function artifactExtension(url, build) {
+  if (isSimulatorBuild(build)) return ".tar.gz";
+  const path = String(url).split("?")[0].toLowerCase();
+  if (path.endsWith(".tar.gz")) return ".tar.gz";
+  if (path.endsWith(".ipa")) return ".ipa";
+  return ".ipa";
 }
 
 async function main() {
@@ -120,26 +163,35 @@ async function main() {
     "--json",
   ]);
   const builds = asBuildList(parseJson(rawList, "eas build:list"));
-  const production = builds.filter((build) => profileOf(build) === "production");
+  const profile = targetProfile();
+  const simulatorOnly = requireSimulatorBuild();
+  let matched = builds.filter((build) => profileOf(build) === profile);
+  if (simulatorOnly) {
+    matched = matched.filter(isSimulatorBuild);
+  }
 
-  if (production.length === 0) {
+  if (matched.length === 0) {
     const profiles = [...new Set(builds.map(profileOf).filter(Boolean))].join(", ") || "none";
+    const simHint = simulatorOnly
+      ? " No simulator builds matched — run `eas build --profile preview --platform ios` after enabling ios.simulator in eas.json."
+      : "";
     throw new Error(
-      `No finished production iOS builds in the last 20. Profiles seen: ${profiles}`,
+      `No finished iOS builds for profile "${profile}" in the last 20 (simulatorOnly=${simulatorOnly}). Profiles seen: ${profiles}.${simHint}`,
     );
   }
 
-  const latest = production[0];
+  const latest = matched[0];
   const url = artifactUrlOf(latest);
   if (!url) {
     throw new Error(
-      `Production build ${latest.id ?? "(no id)"} has no IPA artifact URL`,
+      `${profile} build ${latest.id ?? "(no id)"} has no artifact URL`,
     );
   }
 
   const version = versionOf(latest);
   const buildNumber = buildNumberOf(latest);
-  const fileName = `onflow-lite-production-${version}-${buildNumber}.ipa`;
+  const ext = artifactExtension(url, latest);
+  const fileName = `onflow-lite-${profile}-${version}-${buildNumber}${ext}`;
   const destDir = join(ROOT, "builds");
   const dest = join(destDir, fileName);
 
