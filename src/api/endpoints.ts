@@ -3,8 +3,11 @@ import {
   accountMeSchema,
   appleAuthSchema,
   attemptSchema,
+  clipInitiateUploadSchema,
   clipJobSchema,
   sessionSchema,
+  sessionAttemptSyncSchema,
+  sessionAttemptsResponseSchema,
   trickListSchema,
 } from "./schemas/runtime";
 import { mapAttempt, mapCatalogTrick, mapSession } from "../domain/mappers/records";
@@ -114,16 +117,10 @@ export async function initiateUpload(input: {
   heightPx: number;
   contentType: "video/mp4" | "video/quicktime";
   sizeBytes: number;
-  capturedAt: string;
+  capturedAt?: string;
   clientHintTrickId?: string;
 }) {
-  return apiRequest<{
-    clip_id: string;
-    upload_url: string;
-    upload_method: string;
-    upload_expires_at: string;
-    storage_key: string;
-  }>("/api/v1/clips/initiate-upload", {
+  const res = await apiRequest<unknown>("/api/v1/clips/initiate-upload", {
     method: "POST",
     json: {
       session_id: input.sessionId,
@@ -136,6 +133,8 @@ export async function initiateUpload(input: {
       client_hint_trick_id: input.clientHintTrickId,
     },
   });
+  if (!res.ok) return res;
+  return validated(clipInitiateUploadSchema.safeParse(res.data));
 }
 
 export async function completeUpload(clipId: string) {
@@ -154,7 +153,7 @@ export async function fetchClipJob(jobId: string): Promise<ApiResult<AnalysisRes
 }
 
 export async function syncAttempts(attempts: Attempt[]): Promise<ApiResult<{ accepted: string[]; rejected: { id: string; reason: string }[] }>> {
-  return apiRequest("/api/v1/session-attempts/sync", {
+  const res = await apiRequest<unknown>("/api/v1/session-attempts/sync", {
     method: "POST",
     json: {
       attempts: attempts.map((a) => ({
@@ -167,13 +166,17 @@ export async function syncAttempts(attempts: Attempt[]): Promise<ApiResult<{ acc
       })),
     },
   });
+  if (!res.ok) return res;
+  return validated(sessionAttemptSyncSchema.safeParse(res.data));
 }
 
 export async function fetchSessionAttempts(sessionId: string): Promise<ApiResult<Attempt[]>> {
-  const res = await apiRequest<{ attempts: unknown[] }>(`/api/v1/sessions/${sessionId}/attempts`);
+  const res = await apiRequest<unknown>(`/api/v1/sessions/${sessionId}/attempts`);
   if (!res.ok) return res;
+  const response = sessionAttemptsResponseSchema.safeParse(res.data);
+  if (!response.success) return fail({ kind: "contract" });
   const attempts: Attempt[] = [];
-  for (const raw of res.data.attempts) {
+  for (const raw of response.data.attempts) {
     const parsed = attemptSchema.safeParse(raw);
     if (!parsed.success) return fail({ kind: "contract" });
     attempts.push(mapAttempt(parsed.data));
