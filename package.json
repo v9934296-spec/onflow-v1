@@ -16,7 +16,7 @@
     "api:generate": "node scripts/generate-openapi-types.mjs",
     "api:check": "node scripts/generate-openapi-types.mjs --check",
     "api:test": "node scripts/run-api-pytest.mjs",
-    "verify:phase0": "npm run typecheck && npm run lint && npm run verify:boundaries && npm run api:check && npm run test",
+    "verify:phase0": "npm run typecheck && npm run lint && npm run verify:boundaries && npm run verify:release-config && npm run api:check && npm run test",
     "verify:all": "npm run verify:phase0 && npm run api:test",
     "e2e:smoke": "maestro test .maestro/smoke-sign-in.yaml",
     "bundle:ios": "expo export --platform ios --output-dir dist-ios",
@@ -27,7 +27,8 @@
     "build:production:ios": "eas build --profile production --platform ios",
     "submit:ios": "eas submit --profile production --platform ios --latest",
     "build:device:ios": "eas build --profile device-preview --platform ios",
-    "download:ios:device": "node scripts/download-eas-ios.mjs device-preview"
+    "download:ios:device": "node scripts/download-eas-ios.mjs device-preview",
+    "verify:release-config": "node scripts/verify-release-config.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/bebas-neue": "^0.4.1",
