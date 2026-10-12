@@ -123,3 +123,14 @@ export interface OutboxRow {
   /** The skater's recorded call on this clip, once made. Never inferred. */
   readonly outcome?: AttemptOutcome | null;
 }
+
+/** Authenticated backend History item, survives app reinstalls (unlike the local outbox). */
+export interface ClipHistoryItem {
+  readonly id: string;
+  readonly session_id: string | null;
+  readonly trick_id: string | null;
+  readonly stance: string | null;
+  readonly upload_status: string;
+  readonly duration_seconds: number | null;
+  readonly created_at: string;
+}
