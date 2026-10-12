@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
+import * as FileSystem from "expo-file-system";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { attemptsForSession, mergeAttempts, nextAttemptNumber } from "@/domain/attempts";
@@ -69,6 +70,7 @@ export default function ResultScreen() {
   const [saving, setSaving] = useState(false);
   /** The outbox row this clip came from: its own trick, local file and recorded call. */
   const [row, setRow] = useState<OutboxRow | null>(null);
+  const [localFileExists, setLocalFileExists] = useState<boolean | null>(null);
   const [recorded, setRecorded] = useState(false);
   const trick = row?.trick ?? selectedTrick;
   const offline = useOffline();
@@ -89,6 +91,20 @@ export default function ResultScreen() {
       cancelled = true;
     };
   }, [localId, currentUserId]);
+
+
+  useEffect(() => {
+    if (!row?.localUri) {
+      setLocalFileExists(null);
+      return;
+    }
+    let active = true;
+    setLocalFileExists(null);
+    void FileSystem.getInfoAsync(row.localUri)
+      .then((info) => { if (active) setLocalFileExists(info.exists); })
+      .catch(() => { if (active) setLocalFileExists(false); });
+    return () => { active = false; };
+  }, [row?.localUri, playbackKey]);
 
   useEffect(() => {
     const hit = completedResult(queryClient.getQueryData<AnalysisResult>(["result", clipId]));
@@ -214,8 +230,8 @@ export default function ResultScreen() {
     <ScreenSafeArea>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: space.xl }}>
         <MediaStage
-          uri={analysis.videoPlaybackUrl ?? row?.localUri ?? null}
-          fileExists={null}
+          uri={localFileExists === true && row ? row.localUri : analysis.videoPlaybackUrl ?? row?.localUri ?? null}
+          fileExists={localFileExists}
           playbackKey={playbackKey}
           accessibilityLabel={`${trick?.canonicalName ?? "Attempt"} footage`}
           onRetry={() => setPlaybackKey((n) => n + 1)}
