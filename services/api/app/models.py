@@ -290,6 +290,7 @@ class ClipModel(SQLModel, table=True):
     user_id: str = Field(index=True, max_length=64)
     session_id: Optional[str] = Field(default=None, foreign_key="skate_sessions.id", max_length=36)
     trick_id: Optional[str] = Field(default=None, max_length=64)
+    stance: Optional[str] = Field(default=None, max_length=16)
     storage_key: str = Field(sa_column=Column(Text))
     storage_url: str = Field(default="", sa_column=Column(Text))
     thumbnail_key: Optional[str] = Field(default=None, sa_column=Column(Text))

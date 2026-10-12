@@ -22,8 +22,6 @@ from app.core.config import get_settings
 from app.core.resilience import gemini_circuit
 from app.core.tiers import (
     normalize_tier,
-    normalized_review_model_for_provider,
-    resolve_analysis_provider_for_tier,
     resolve_gemini_model_for_tier,
 )
 from app.repositories.clip_jobs import ClipJobRepository
@@ -50,8 +48,6 @@ from app.services.gemini_clip_analyzer import (
 from app.services.gemini_prompt_tier import build_tier_aware_prompt
 from app.services.gemini_prompt import ClipAnalysisMetadata
 from app.services.gemini_reviewer import GeminiReviewer
-from app.services.twelvelabs_clip_analyzer import analyze_clip_with_twelvelabs
-from app.services.twelvelabs_reviewer import TwelveLabsReviewer
 from app.services.landing_status import resolve_landed_status
 from app.services.line_matching import record_matching_line_attempts
 from app.services.session_grouping import resolve_session_id
@@ -639,24 +635,44 @@ async def run_clip_job(
                 cam = _replace(cam, notes=notes)
 
             settings = get_settings()
-            tier_norm = normalize_tier(job.tier)
-            analysis_provider = resolve_analysis_provider_for_tier(tier_norm, settings)
-            review_model = normalized_review_model_for_provider(analysis_provider)
-            pegasus_model = (settings.twelvelabs_model or "pegasus1.5").strip()
-            main_model = (
-                resolve_gemini_model_for_tier(tier_norm, settings)
-                if analysis_provider == "gemini"
-                else pegasus_model
-            )
+            if not settings.analysis_providers_enabled:
+                # Launch configuration: no Gemini / Twelve Labs call. Complete honestly
+                # with OpenCV checks only; finalize releases the quota (insufficient).
+                result = build_degraded_provider_failure_result(
+                    first,
+                    label,
+                    pipeline_reason="analysis_provider_disabled",
+                    provider_disabled=True,
+                )
+                logger.info("event=clip_job_completed_provider_disabled")
+                await finalize_completed_clip_job(
+                    job=job,
+                    repo=repo,
+                    result=result,
+                    job_id=job_id,
+                    effective_user_id=user_id or job.user_id,
+                    tricks_list=tricks_list,
+                    label=label,
+                    meta=meta,
+                    file_path=file_path,
+                    storage_key=storage_key,
+                    engine=engine,
+                    t_job_start=t_job,
+                    degraded=True,
+                    claim_token=claim_token,
+                )
+                return
 
-            # Tier-aware prompt for Gemini; Pegasus builds its own prompt in the analyzer.
+            tier_norm = normalize_tier(job.tier)
+            main_model = resolve_gemini_model_for_tier(tier_norm, settings)
+            review_model = "gemini"
+
+            # Tier-aware Gemini prompt. Pro gets more coaching from Flash.
             pack = build_tier_aware_prompt(cam, tier_norm)
 
             content_sha256 = str(meta.get("content_sha256") or "")
-            tl_asset_id = ""
             cached_analysis: GeminiClipAnalysis | None = None
-            if analysis_provider == "gemini":
-                cached_analysis = await _gemini_cache_get(content_sha256, tier_norm)
+            cached_analysis = await _gemini_cache_get(content_sha256, tier_norm)
 
             t_main = time.time()
             if cached_analysis is not None:
@@ -667,7 +683,7 @@ async def run_clip_job(
                     tier=tier_norm,
                     sha=content_sha256[:8],
                 )
-            elif analysis_provider == "gemini":
+            else:
                 try:
                     gemini = await analyze_clip_with_gemini(
                         file_path,
@@ -714,64 +730,17 @@ async def run_clip_job(
 
                 await _gemini_cache_set(content_sha256, tier_norm, gemini)
                 record_gemini_call(main_model)
-            else:
-                try:
-                    gemini, tl_asset_id = await analyze_clip_with_twelvelabs(
-                        file_path,
-                        cam,
-                        job_id=job_id,
-                        settings=settings,
-                        account_tier=tier_norm,
-                    )
-                except GeminiPipelineError as e:
-                    result = build_degraded_provider_failure_result(
-                        first,
-                        label,
-                        pipeline_reason=e.reason,
-                        pipeline_detail=e.detail or "",
-                    )
-                    log_beta(
-                        "beta_job_provider_degraded",
-                        job_id=job_id,
-                        pipeline_reason=e.reason,
-                    )
-                    logger.info(
-                        "event=clip_job_completed_degraded pipeline_reason=%s detail=%s",
-                        e.reason,
-                        (e.detail or "")[:120],
-                    )
-                    await finalize_completed_clip_job(
-                        job=job,
-                        repo=repo,
-                        result=result,
-                        job_id=job_id,
-                        effective_user_id=user_id or job.user_id,
-                        tricks_list=tricks_list,
-                        label=label,
-                        meta=meta,
-                        file_path=file_path,
-                        storage_key=storage_key,
-                        engine=engine,
-                        t_job_start=t_job,
-                        degraded=True,
-                        claim_token=claim_token,
-                    )
-                    return
-
-                record_gemini_call(pegasus_model)
-
             _main_duration_ms = round((time.time() - t_main) * 1000)
             logger.info(
                 "provider_call_complete",
                 job_id=job_id,
-                provider=analysis_provider,
+                provider="gemini",
                 model=main_model,
                 tier=tier_norm,
                 stage="analyze",
                 outcome="ok",
                 duration_ms=_main_duration_ms,
                 cache_hit=cached_analysis is not None,
-                asset_id=tl_asset_id[:12] if tl_asset_id else None,
             )
             try:
                 import sentry_sdk
@@ -787,7 +756,7 @@ async def run_clip_job(
             enrichment: dict[str, Any] | None = None
             enrichment_attempted = False
             enrichment_model: str | None = None
-            if analysis_provider == "gemini" and settings.gemini_api_key:
+            if settings.gemini_api_key:
                 enrichment_model = resolve_gemini_model_for_tier(tier_norm, settings)
                 if gemini_circuit.is_open:
                     logger.warning(
@@ -829,37 +798,6 @@ async def run_clip_job(
                         )
                         gemini_circuit.record_failure()
                         enrichment = None
-            elif analysis_provider == "twelvelabs" and settings.twelvelabs_api_key:
-                enrichment_model = pegasus_model
-                enrichment_attempted = True
-                t_enrich = time.time()
-                try:
-                    tl_reviewer = TwelveLabsReviewer(settings)
-                    enrichment = await tl_reviewer.enrich(
-                        asset_id=tl_asset_id,
-                        clip_label=label,
-                        clip_metadata=meta,
-                        user_id=user_id or job.user_id,
-                    )
-                    logger.info(
-                        "provider_call_complete",
-                        job_id=job_id,
-                        provider="twelvelabs",
-                        model=pegasus_model,
-                        tier=tier_norm,
-                        stage="enrich",
-                        outcome="ok",
-                        duration_ms=round((time.time() - t_enrich) * 1000),
-                        asset_id=tl_asset_id[:12] if tl_asset_id else None,
-                    )
-                    record_gemini_call(pegasus_model)
-                except Exception:
-                    logger.exception(
-                        "Twelve Labs enrichment failed after retries job_id=%s",
-                        job_id,
-                    )
-                    enrichment = None
-
             trick_str = tricks_list[0] if tricks_list else ""
             stance_str = str(meta.get("stance") or "").strip()
 

@@ -3,6 +3,15 @@ import type { CatalogTrick } from "./models";
 export const STANCE_OPTIONS = ["Regular", "Switch", "Nollie", "Fakie"] as const;
 export const DIRECTION_OPTIONS = ["Frontside", "Backside"] as const;
 
+type StanceWire = "regular" | "switch" | "nollie" | "fakie";
+
+/** Stance on the wire is the lowercase picker value; anything else is omitted, never guessed. */
+export function stanceWire(stance: string | null | undefined): StanceWire | undefined {
+  const value = stance?.trim().toLowerCase();
+  if (value === "regular" || value === "switch" || value === "nollie" || value === "fakie") return value;
+  return undefined;
+}
+
 export function mimeFromUri(uri: string): "video/mp4" | "video/quicktime" {
   const path = uri.split("?")[0]?.toLowerCase() ?? "";
   if (path.endsWith(".mov") || path.endsWith(".qt")) return "video/quicktime";

@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -8,6 +9,23 @@ from app.core.gemini_config import GeminiNotConfiguredError, get_gemini_api_key
 
 _API_DIR = Path(__file__).resolve().parent.parent.parent
 
+# Conventional S3 variable names accepted when the ONFLOW_S3_* name is unset.
+# Production Railway stores the R2 credentials under these names (some saved
+# with a stray leading space), so keys are matched after stripping whitespace.
+_S3_ENV_FALLBACKS: dict[str, str] = {
+    "s3_bucket": "S3_BUCKET",
+    "s3_endpoint": "S3_ENDPOINT",
+    "s3_access_key": "S3_ACCESS_KEY_ID",
+    "s3_secret_key": "S3_SECRET_ACCESS_KEY",
+}
+
+
+def _env_by_stripped_name(name: str) -> str:
+    for key, value in os.environ.items():
+        if key.strip() == name:
+            return (value or "").strip()
+    return ""
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -15,6 +33,8 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         env_prefix="ONFLOW_",
         extra="ignore",
+        # A failed production check must never echo secret values into logs.
+        hide_input_in_errors=True,
     )
 
     cors_origins: str = ""  # must be set via ONFLOW_CORS_ORIGINS in production; empty = deny all non-local
@@ -103,7 +123,13 @@ class Settings(BaseSettings):
     # RevenueCat webhook secret (from RC dashboard → Webhooks → Authorization header)
     rc_webhook_secret: str = ""
 
-    # Gemini — required for completed clip jobs (see gemini_clip_analyzer).
+    # Launch switch (ONFLOW_ANALYSIS_PROVIDERS_ENABLED). Off: clip jobs never call
+    # Gemini; they complete with OpenCV video checks only
+    # (review_method=provider_disabled, readiness insufficient, quota released).
+    # This is the single integration point for turning a review provider back on.
+    analysis_providers_enabled: bool = False
+
+    # Gemini — required for completed clip jobs when providers are enabled.
     # Tier selection is centralized in ``app.core.tiers.resolve_gemini_model_for_tier``.
     gemini_api_key: str = ""
     # Legacy single-model override (``ONFLOW_GEMINI_MODEL`` / bare ``GEMINI_MODEL``).
@@ -114,19 +140,19 @@ class Settings(BaseSettings):
     gemini_max_retries: int = 1
     gemini_temperature: float = 0.2
     gemini_max_output_tokens: int = 2048
-    gemini_model_free: str = "gemini-2.5-flash-lite"
+    gemini_model_free: str = "gemini-2.5-flash"
     gemini_model_pro: str = "gemini-2.5-flash"
     gemini_inline_max_bytes: int = 20 * 1024 * 1024
     # Daily Gemini spend ceiling (USD). 0 = disabled. Enforced via gemini_spend_daily table.
     gemini_daily_spend_cap_usd: float = 0.0
 
-    # Twelve Labs Pegasus — Pro tier main + enrichment analysis.
+    # Legacy Twelve Labs settings are inert; no worker path invokes Pegasus.
     twelvelabs_api_key: str = ""
     twelvelabs_model: str = "pegasus1.5"
     twelvelabs_timeout_seconds: float = 90.0
     twelvelabs_max_retries: int = 1
     twelvelabs_max_output_tokens: int = 8192
-    # Emergency rollback: Pro tier uses Gemini Flash instead of Pegasus.
+    # Deprecated flag kept for older deployments; Gemini-only routing is unconditional.
     force_gemini_for_pro: bool = False
 
     # ARQ worker tuning. Bump arq_max_jobs as you add worker replicas / CPU.
@@ -139,6 +165,13 @@ class Settings(BaseSettings):
     db_pool_size: int = 10
     db_max_overflow: int = 5
     db_pool_recycle: int = 1800
+
+    @model_validator(mode="after")
+    def _s3_env_fallback(self) -> "Settings":
+        for field, fallback in _S3_ENV_FALLBACKS.items():
+            if not (getattr(self, field) or "").strip():
+                object.__setattr__(self, field, _env_by_stripped_name(fallback))
+        return self
 
     @model_validator(mode="after")
     def _gemini_env_fallback(self) -> "Settings":
@@ -200,15 +233,10 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "ONFLOW_REDIS_URL must be a redis:// or rediss:// URL in production/staging."
                 )
-            if not (self.twelvelabs_api_key or "").strip():
-                raise ValueError(
-                    "ONFLOW_TWELVELABS_API_KEY must be set when ONFLOW_ENV is "
-                    "production, prod, or staging."
-                )
-            if not (self.gemini_api_key or "").strip():
+            if self.analysis_providers_enabled and not (self.gemini_api_key or "").strip():
                 raise ValueError(
                     "ONFLOW_GEMINI_API_KEY must be set when ONFLOW_ENV is "
-                    "production, prod, or staging (free-tier analysis)."
+                    "production, prod, or staging (Gemini analysis)."
                 )
             if not self.s3_configured:
                 raise ValueError(

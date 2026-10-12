@@ -96,6 +96,7 @@ def initiate_clip_upload(
         user_id=user_id,
         session_id=validated_session_id,
         trick_id=body.client_hint_trick_id,
+        stance=body.stance,
         storage_key=storage_key,
         storage_url="",
         duration_seconds=body.duration_seconds,

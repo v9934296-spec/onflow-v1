@@ -226,6 +226,10 @@ class ClipInitiateUploadRequest(BaseModel):
             "ended_at. Omitted by onflow-lite; the 24h window still applies."
         ),
     )
+    stance: Literal["regular", "fakie", "switch", "nollie"] | None = Field(
+        default=None,
+        description="Skater-selected stance for the called trick; passed to review metadata.",
+    )
 
 
 class ClipInitiateUploadResponse(BaseModel):

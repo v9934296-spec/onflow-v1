@@ -116,6 +116,7 @@ export async function initiateUpload(input: {
   sizeBytes: number;
   capturedAt: string;
   clientHintTrickId?: string;
+  stance?: string;
 }) {
   return apiRequest<{
     clip_id: string;
@@ -134,6 +135,7 @@ export async function initiateUpload(input: {
       size_bytes: input.sizeBytes,
       captured_at: input.capturedAt,
       client_hint_trick_id: input.clientHintTrickId,
+      stance: input.stance,
     },
   });
 }

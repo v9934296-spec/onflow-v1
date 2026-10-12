@@ -287,28 +287,16 @@ def test_development_allows_missing_admin_emails(
     assert not (s.admin_emails or "").strip()
 
 
-def test_staging_requires_twelvelabs_api_key_at_settings(
-    monkeypatch: pytest.MonkeyPatch,
+@pytest.mark.parametrize("environment", ["production", "staging"])
+def test_gemini_only_production_and_staging_do_not_require_twelvelabs(
+    environment: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("ONFLOW_ENV", "staging")
+    monkeypatch.setenv("ONFLOW_ENV", environment)
     _prod_settings_env(monkeypatch)
+    monkeypatch.setenv("ONFLOW_GEMINI_API_KEY", "test-gemini-key")
+    monkeypatch.setenv("ONFLOW_ANALYSIS_PROVIDERS_ENABLED", "true")
     from app.core.config import Settings
-
-    with pytest.raises(ValidationError) as exc:
-        Settings()
-    assert "ONFLOW_TWELVELABS_API_KEY" in str(exc.value)
-
-
-def test_production_requires_twelvelabs_api_key_at_settings(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setenv("ONFLOW_ENV", "production")
-    _prod_settings_env(monkeypatch)
-    from app.core.config import Settings
-
-    with pytest.raises(ValidationError) as exc:
-        Settings()
-    assert "ONFLOW_TWELVELABS_API_KEY" in str(exc.value)
+    assert Settings().analysis_providers_enabled is True
 
 
 def test_production_requires_gemini_api_key_at_settings(
@@ -393,9 +381,6 @@ def test_twelvelabs_key_never_in_validation_error_or_logs(
 
     monkeypatch.delenv("ONFLOW_TWELVELABS_API_KEY", raising=False)
     get_settings.cache_clear()
-    with pytest.raises(ValidationError) as exc:
-        Settings()
-    err_text = str(exc.value)
-    assert "ONFLOW_TWELVELABS_API_KEY" in err_text
-    assert secret not in err_text
+    settings = Settings()
+    assert not settings.twelvelabs_api_key
     assert secret not in caplog.text

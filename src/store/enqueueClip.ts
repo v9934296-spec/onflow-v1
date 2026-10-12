@@ -19,7 +19,7 @@ export async function enqueueClip(input: {
   if (!userId) return null;
   if (input.durationSeconds > compressionContract.maxDurationSeconds) return null;
   if (input.sizeBytes > compressionContract.maxBytes) return null;
-  const session = useSessionStore.getState().session;
+  const { session, trick } = useSessionStore.getState();
   const localId = newLocalId();
   const row: OutboxRow = {
     schemaVersion: 1,
@@ -38,6 +38,8 @@ export async function enqueueClip(input: {
     attemptCount: 0,
     nextRetryAt: null,
     errorKind: null,
+    trick: trick ?? null,
+    outcome: null,
   };
   await upsertOutbox(row);
   void runOutboxRow(localId);
