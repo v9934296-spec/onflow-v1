@@ -1,5 +1,5 @@
 import * as FileSystem from "expo-file-system";
-import { completeUpload, fetchClipJob, initiateUpload } from "../api/endpoints";
+import { completeUpload, fetchClipJob, initiateUpload, refreshUpload } from "../api/endpoints";
 import type { ApiError } from "../api/types";
 import type { OutboxRow } from "../domain/models";
 import {
@@ -95,6 +95,9 @@ async function runUnlocked(localId: string): Promise<OutboxRow | null> {
     existing.clipId &&
     (existing.state === "uploaded" || existing.state === "requesting_analysis" || existing.state === "failed_retryable")
   ) {
+    // A PUT that failed or died during an app suspension must re-use the
+    // existing clip with a NEW presign. Completing a missing object never works.
+    if (existing.bytesUploaded !== existing.sizeBytes) return resumeUpload(existing);
     return completePipeline(existing);
   }
   return initiatePipeline(existing);
@@ -121,6 +124,12 @@ async function initiatePipeline(existing: OutboxRow): Promise<OutboxRow> {
     return row;
   }
 
+  if (!isSignedUploadUrl(initiated.data.upload_url)) {
+    row = withPermanent(row, "upload_failed_permanent");
+    await upsertOutbox(row);
+    return row;
+  }
+
   row = {
     ...row,
     clipId: mintClipId(initiated.data.clip_id),
@@ -131,11 +140,43 @@ async function initiatePipeline(existing: OutboxRow): Promise<OutboxRow> {
 
   const put = await putFile(initiated.data.upload_url, row.localUri, row.mimeType);
   if (!put.ok) {
-    row = withRetry({ ...row, clipId: null }, "upload_failed_retryable");
+    row = withRetry(row, "upload_failed_retryable");
     await upsertOutbox(row);
     return row;
   }
 
+  row = { ...row, state: "requesting_analysis", bytesUploaded: row.sizeBytes };
+  await upsertOutbox(row);
+  return completePipeline(row, false);
+}
+
+/** Retry the original clip upload using a fresh presign (never create a second clip). */
+async function resumeUpload(existing: OutboxRow): Promise<OutboxRow> {
+  if (!existing.clipId) return initiatePipeline(existing);
+  const refreshed = await refreshUpload(existing.clipId);
+  if (!refreshed.ok) {
+    if (refreshed.error.status === 404) {
+      // The server deleted the uncompleted record. Only then create a new one.
+      return initiatePipeline({ ...existing, clipId: null, bytesUploaded: null });
+    }
+    if (refreshed.error.status === 409) return completePipeline(existing, false);
+    const failed = applyHttpFailure(existing, refreshed.error, "upload_failed_retryable");
+    await upsertOutbox(failed);
+    return failed;
+  }
+  if (!isSignedUploadUrl(refreshed.data.upload_url)) {
+    const failed = withPermanent(existing, "upload_failed_permanent");
+    await upsertOutbox(failed);
+    return failed;
+  }
+  let row: OutboxRow = { ...existing, state: "uploading", errorKind: null, bytesUploaded: 0 };
+  await upsertOutbox(row);
+  const put = await putFile(refreshed.data.upload_url, row.localUri, row.mimeType);
+  if (!put.ok) {
+    row = withRetry(row, "upload_failed_retryable");
+    await upsertOutbox(row);
+    return row;
+  }
   row = { ...row, state: "requesting_analysis", bytesUploaded: row.sizeBytes };
   await upsertOutbox(row);
   return completePipeline(row, false);
@@ -227,12 +268,22 @@ export async function drainRecoverable(userId: string): Promise<void> {
   }
 }
 
+/** Local-only placeholders are not remotely uploaded media. Never report success. */
+function isSignedUploadUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && Boolean(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
 async function putFile(
   url: string,
   localUri: string,
   mime: string,
 ): Promise<{ ok: boolean }> {
-  if (url.startsWith("local://")) return { ok: true };
+  if (!isSignedUploadUrl(url)) return { ok: false };
   try {
     const result = await FileSystem.uploadAsync(url, localUri, {
       httpMethod: "PUT",
