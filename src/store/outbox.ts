@@ -79,6 +79,30 @@ export async function sealedRowsForOtherAccount(signedInUserId: string): Promise
   return [...rows.values()].filter((row) => row.ownerUserId !== signedInUserId);
 }
 
+
+/** Account deletion: erase only this account's app-owned footage and outbox rows.
+ * Never touch a camera-roll original or another skater's rows.
+ */
+export async function purgeOutboxForUser(userId: string): Promise<void> {
+  ensureHydrated();
+  const FileSystem = await import("expo-file-system");
+  const ownedDirectory = FileSystem.documentDirectory
+    ? `${FileSystem.documentDirectory}onflow/queued-clips/`
+    : null;
+  for (const row of [...rows.values()]) {
+    if (row.ownerUserId !== userId) continue;
+    if (ownedDirectory && row.localUri.startsWith(ownedDirectory)) {
+      try {
+        await FileSystem.deleteAsync(row.localUri, { idempotent: true });
+      } catch {
+        // Continue deleting the account's metadata when a file is already gone.
+      }
+    }
+    rows.delete(row.localId);
+  }
+  persist();
+}
+
 export function newLocalId(): LocalId {
   const id =
     globalThis.crypto?.randomUUID?.() ?? `local-${Date.now()}-${Math.random()}`;
