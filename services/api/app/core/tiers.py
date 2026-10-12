@@ -58,3 +58,8 @@ def resolve_analysis_provider_for_tier(
 
 def normalized_review_model_for_provider(provider: AnalysisProvider) -> str:
     return "gemini"
+
+
+def tier_gets_deep_enrichment(tier: str | None) -> bool:
+    """Spend a second Gemini call only on Pro; Free receives the single-pass review."""
+    return normalize_tier(tier) == "pro"
