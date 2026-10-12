@@ -63,7 +63,7 @@ function withPermanent(row: OutboxRow, errorKind: string): OutboxRow {
 function applyHttpFailure(row: OutboxRow, error: ApiError, fallback: "upload_failed_retryable" | "analysis_failed"): OutboxRow {
   const state = classifyHttpFailure(error.status ?? 0);
   const errorKind = fromApiError(error, fallback);
-  if (state === "failed_permanent") return withPermanent(row, errorKind);
+  if (state === "failed_permanent" || errorKind === "quota_exhausted" || errorKind === "tier_gate") return withPermanent(row, errorKind);
   return withRetry(row, errorKind);
 }
 
