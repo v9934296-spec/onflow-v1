@@ -25,7 +25,9 @@
     "install:ios:simulator": "node scripts/install-ios-simulator.mjs",
     "build:preview:ios": "eas build --profile preview --platform ios",
     "build:production:ios": "eas build --profile production --platform ios",
-    "submit:ios": "eas submit --profile production --platform ios --latest"
+    "submit:ios": "eas submit --profile production --platform ios --latest",
+    "build:device:ios": "eas build --profile device-preview --platform ios",
+    "download:ios:device": "node scripts/download-eas-ios.mjs device-preview"
   },
   "dependencies": {
     "@expo-google-fonts/bebas-neue": "^0.4.1",
