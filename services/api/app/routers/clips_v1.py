@@ -40,7 +40,7 @@ def _require_upload_feature(request: Request, user_id: str) -> None:
     db = request.app.state.db
     tier = normalize_tier(db.get_user_tier(user_id))
     if not tier_has_feature(tier, "upload_clip"):
-        raise HTTPException(status_code=403, detail=_TRIAL_ENDED_UPLOAD_MESSAGE)
+        raise HTTPException(status_code=403, detail="tier_gate")
 
 
 def _resolve_session_for_upload(
