@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { mintClipId, mintJobId } from "../mappers/ids";
 import type { AnalysisResult } from "../models";
 import {
-  RESULT_POLL_CAP_MS,
   RESULT_SLOW_MS,
   completedResult,
   interpretResultLoad,
@@ -45,7 +44,7 @@ describe("result load", () => {
     expect(miss.errorKind).toBeNull();
   });
 
-  it("stays on a slow job instead of failing, then times out honestly", () => {
+  it("never calls a server-running review failed merely because it is slow", () => {
     const slow = interpretResultLoad({
       clipId: "clip-1",
       poll: { ok: true, data: job("processing") },
@@ -57,13 +56,13 @@ describe("result load", () => {
     const capped = interpretResultLoad({
       clipId: "clip-1",
       poll: { ok: true, data: job("processing") },
-      elapsedMs: RESULT_POLL_CAP_MS,
+      elapsedMs: 24 * 60 * 60_000,
     });
     expect(capped).toEqual({
-      phase: "failed",
+      phase: "slow",
       analysis: null,
-      errorKind: "analysis_failed",
-      keepPolling: false,
+      errorKind: null,
+      keepPolling: true,
     });
   });
 
@@ -91,6 +90,14 @@ describe("result load", () => {
       elapsedMs: 2_000,
     });
     expect(failedJob.errorKind).toBe("analysis_failed");
+    const gatewayFlake = interpretResultLoad({
+      clipId: "clip-1",
+      poll: { ok: false, errorKind: "server" },
+      elapsedMs: 7 * 60_000,
+    });
+    expect(gatewayFlake.phase).toBe("slow");
+    expect(gatewayFlake.keepPolling).toBe(true);
+
   });
 
   it("polls faster at first, then backs off", () => {
