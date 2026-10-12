@@ -74,4 +74,8 @@ export const kvUserKeys = {
   skaterProfile: (userId: string) => `onflow.skaterProfile.v1.${userId}`,
   onboardingDraft: (userId: string) => `onflow.onboardingDraft.v1.${userId}`,
   pendingAttempts: (userId: string) => `onflow.pendingAttempts.v1.${userId}`,
+  activeSessionId: (userId: string) => `onflow.activeSessionId.v2.${userId}`,
+  activeSession: (userId: string) => `onflow.activeSession.v2.${userId}`,
+  selectedTrick: (userId: string) => `onflow.selectedTrick.v2.${userId}`,
+  pendingSessionEnd: (userId: string) => `onflow.pendingSessionEnd.v2.${userId}`,
 } as const;

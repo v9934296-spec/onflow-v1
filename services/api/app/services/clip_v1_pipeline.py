@@ -190,6 +190,8 @@ async def complete_v1_clip_upload(
         "v1_skate_session_id": clip.session_id,
         "v1_clip_id": clip.id,
     }
+    if clip.stance:
+        metadata["stance"] = clip.stance
 
     if existing_job is None:
         cc = get_settings().clip_concurrent_processing_limit_per_user

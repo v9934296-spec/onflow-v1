@@ -19,19 +19,21 @@ def test_health_reports_gemini_configured_when_key_set(
     assert r.json().get("gemini_configured") is True
 
 
-def test_health_reports_twelvelabs_and_clip_review_ready(
+def test_health_reports_gemini_only_review_ready(
     monkeypatch: pytest.MonkeyPatch, client: TestClient
 ) -> None:
     monkeypatch.setenv("ONFLOW_GEMINI_API_KEY", "gemini-key")
-    monkeypatch.setenv("ONFLOW_TWELVELABS_API_KEY", "tl-key")
+    monkeypatch.setenv("ONFLOW_ANALYSIS_PROVIDERS_ENABLED", "true")
+    monkeypatch.delenv("ONFLOW_TWELVELABS_API_KEY", raising=False)
     from app.core.config import get_settings
 
     get_settings.cache_clear()
     r = client.get("/health")
     assert r.status_code == 200
     body = r.json()
-    assert body.get("twelvelabs_configured") is True
-    assert body.get("clip_review_ready") is True
+    assert body["gemini_configured"] is True
+    assert body["clip_review_ready"] is True
+    assert "twelvelabs_configured" not in body
 
 
 @pytest.mark.asyncio

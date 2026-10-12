@@ -6,6 +6,7 @@ import { runOutboxRow } from "./upload";
 import { useAuthStore } from "./authStore";
 import { useSessionStore } from "./sessionStore";
 import { compressionContract } from "../domain/compression";
+import { persistOwnedClip } from "./ownedMedia";
 
 export async function enqueueClip(input: {
   uri: string;
@@ -19,8 +20,10 @@ export async function enqueueClip(input: {
   if (!userId) return null;
   if (input.durationSeconds > compressionContract.maxDurationSeconds) return null;
   if (input.sizeBytes > compressionContract.maxBytes) return null;
-  const session = useSessionStore.getState().session;
+  const { session, trick } = useSessionStore.getState();
   const localId = newLocalId();
+  const localUri = await persistOwnedClip(input.uri, localId, input.mimeType, input.sizeBytes);
+  if (!localUri) return null;
   const row: OutboxRow = {
     schemaVersion: 1,
     localId,
@@ -29,7 +32,7 @@ export async function enqueueClip(input: {
     sessionId: session ? mintSessionId(session.id) : null,
     state: "pending",
     mediaKind: input.mediaKind,
-    localUri: input.uri,
+    localUri,
     mimeType: input.mimeType,
     durationSeconds: input.durationSeconds,
     sizeBytes: input.sizeBytes,
@@ -38,8 +41,11 @@ export async function enqueueClip(input: {
     attemptCount: 0,
     nextRetryAt: null,
     errorKind: null,
+    trick: trick ?? null,
+    outcome: null,
   };
   await upsertOutbox(row);
-  void runOutboxRow(localId);
+  // A crashed request is recoverable from the persisted row on next foreground drain.
+  void runOutboxRow(localId).catch(() => {});
   return localId;
 }

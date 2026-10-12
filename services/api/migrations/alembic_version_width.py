@@ -59,6 +59,9 @@ def ensure_alembic_version_num_width(
         return
 
     if current >= length:
+        # End the inspection's autobegun transaction so the caller's
+        # migrations run in (and commit) their own transaction.
+        connection.commit()
         return
 
     if dialect == "postgresql":

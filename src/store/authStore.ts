@@ -21,6 +21,8 @@ export const useAuthStore = create<AuthSlice>((set, get) => ({
     });
     const session = await loadSession();
     if (!session) {
+      const { useSessionStore } = await import("./sessionStore");
+      useSessionStore.getState().clearInMemory();
       set({ phase: "signed_out", userId: null });
       return;
     }
@@ -28,15 +30,21 @@ export const useAuthStore = create<AuthSlice>((set, get) => ({
     if (!me.ok) {
       if (me.error.kind === "unauthorized") {
         await clearSession();
+        const { useSessionStore } = await import("./sessionStore");
+        useSessionStore.getState().clearInMemory();
         set({ phase: "signed_out", userId: null });
         return;
       }
       set({ phase: "signed_in", userId: session.userId });
+      const { useSessionStore } = await import("./sessionStore");
+      useSessionStore.getState().hydrateFromKv();
       const { restoreActiveSession } = await import("./sessionActions");
       await restoreActiveSession();
       return;
     }
     set({ phase: "signed_in", userId: me.data.user_id });
+    const { useSessionStore } = await import("./sessionStore");
+    useSessionStore.getState().hydrateFromKv();
     const { restoreActiveSession } = await import("./sessionActions");
     await restoreActiveSession();
   },
@@ -45,6 +53,8 @@ export const useAuthStore = create<AuthSlice>((set, get) => ({
     if (!res.ok) return false;
     await saveSession(res.data.token, res.data.user_id);
     set({ phase: "signed_in", userId: res.data.user_id });
+    const { useSessionStore } = await import("./sessionStore");
+    useSessionStore.getState().hydrateFromKv();
     return true;
   },
   signOut: async () => {
@@ -54,6 +64,8 @@ export const useAuthStore = create<AuthSlice>((set, get) => ({
       const { useSkaterProfileStore } = await import("./skaterProfileStore");
       useSkaterProfileStore.getState().purge(previous);
     }
+    const { useSessionStore } = await import("./sessionStore");
+    useSessionStore.getState().clearInMemory();
     set({ phase: "signed_out", userId: null });
   },
 }));

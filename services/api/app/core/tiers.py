@@ -6,7 +6,7 @@ from typing import Literal
 
 from app.core.config import Settings
 
-AnalysisProvider = Literal["gemini", "twelvelabs"]
+AnalysisProvider = Literal["gemini"]
 
 
 def normalize_tier(raw: str | None) -> str:
@@ -52,13 +52,14 @@ def resolve_analysis_provider_for_tier(
     tier: str | None,
     settings: Settings,
 ) -> AnalysisProvider:
-    """Pro → Twelve Labs Pegasus unless rollback flag forces Gemini."""
-    if settings.force_gemini_for_pro:
-        return "gemini"
-    if normalize_tier(tier) == "pro":
-        return "twelvelabs"
+    """All paid and free tiers use Gemini. Pegasus must never be selected."""
     return "gemini"
 
 
 def normalized_review_model_for_provider(provider: AnalysisProvider) -> str:
-    return "pegasus" if provider == "twelvelabs" else "gemini"
+    return "gemini"
+
+
+def tier_gets_deep_enrichment(tier: str | None) -> bool:
+    """Spend a second Gemini call only on Pro; Free receives the single-pass review."""
+    return normalize_tier(tier) == "pro"

@@ -4,13 +4,14 @@ import {
   appleAuthSchema,
   attemptSchema,
   clipJobSchema,
+  clipHistoryListSchema,
   sessionSchema,
   trickListSchema,
 } from "./schemas/runtime";
 import { mapAttempt, mapCatalogTrick, mapSession } from "../domain/mappers/records";
 import { mapClipJob } from "../domain/mappers/clipJob";
 import { mapSkaterProfile, type SkaterProfilePatchWire } from "../domain/mappers/skaterProfile";
-import type { AnalysisResult, Attempt, CatalogTrick, SkateSession } from "../domain/models";
+import type { AnalysisResult, Attempt, CatalogTrick, SkateSession, ClipHistoryItem } from "../domain/models";
 import type { SkaterProfile } from "../domain/skaterProfile";
 import { skaterProfileResponseSchema, skaterProfileSchema } from "./schemas/runtime";
 import type { ApiResult } from "./types";
@@ -116,6 +117,7 @@ export async function initiateUpload(input: {
   sizeBytes: number;
   capturedAt: string;
   clientHintTrickId?: string;
+  stance?: string;
 }) {
   return apiRequest<{
     clip_id: string;
@@ -134,6 +136,7 @@ export async function initiateUpload(input: {
       size_bytes: input.sizeBytes,
       captured_at: input.capturedAt,
       client_hint_trick_id: input.clientHintTrickId,
+      stance: input.stance,
     },
   });
 }
@@ -194,4 +197,21 @@ export async function syncBilling(hasPro: boolean) {
     method: "POST",
     json: { has_pro: hasPro },
   });
+}
+
+/** Last 100 account-owned server clips. Remote receipts complement the offline outbox. */
+export async function fetchClipHistory(): Promise<ApiResult<ClipHistoryItem[]>> {
+  const res = await apiRequest<unknown>("/api/v1/clips?limit=100");
+  if (!res.ok) return res;
+  const parsed = clipHistoryListSchema.safeParse(res.data);
+  if (!parsed.success) return fail({ kind: "contract" });
+  return ok(parsed.data.clips.map((clip) => ({
+    id: clip.id,
+    session_id: clip.session_id ?? null,
+    trick_id: clip.trick_id ?? null,
+    stance: clip.stance ?? null,
+    upload_status: clip.upload_status,
+    duration_seconds: clip.duration_seconds ?? null,
+    created_at: clip.created_at,
+  })));
 }

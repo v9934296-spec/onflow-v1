@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlmodel import Session
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlmodel import Session, select
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
@@ -21,6 +21,8 @@ from app.schemas.clips import (
     ClipCompleteUploadResponse,
     ClipInitiateUploadRequest,
     ClipInitiateUploadResponse,
+    ClipHistoryItem,
+    ClipHistoryList,
 )
 from app.services.clip_upload import as_utc, clip_storage_key, iso_z, new_clip_id, presigned_put_url
 from app.services.clip_v1_pipeline import assert_session_accepts_clip, complete_v1_clip_upload
@@ -60,6 +62,36 @@ def _resolve_session_for_upload(
     return session_id
 
 
+
+@router.get("", response_model=ClipHistoryList)
+def list_my_clips(
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    limit: int = Query(default=50, ge=1, le=100),
+) -> ClipHistoryList:
+    """Recent account-owned clips, including after reinstall; no storage keys leaked."""
+    clips = db.exec(
+        select(ClipModel)
+        .where(ClipModel.user_id == user_id, ClipModel.deleted_at.is_(None))
+        .order_by(ClipModel.created_at.desc())
+        .limit(limit)
+    ).all()
+    return ClipHistoryList(
+        clips=[
+            ClipHistoryItem(
+                id=clip.id,
+                session_id=clip.session_id,
+                trick_id=clip.trick_id,
+                stance=clip.stance,
+                upload_status=clip.upload_status,
+                duration_seconds=clip.duration_seconds,
+                created_at=iso_z(clip.created_at),
+            )
+            for clip in clips
+        ]
+    )
+
+
 @router.post("/initiate-upload", status_code=201, response_model=ClipInitiateUploadResponse)
 @limiter.limit(clip_abuse_limit_per_day, key_func=clip_submission_key)
 @limiter.limit(clip_abuse_limit_per_hour, key_func=clip_submission_key)
@@ -96,6 +128,7 @@ def initiate_clip_upload(
         user_id=user_id,
         session_id=validated_session_id,
         trick_id=body.client_hint_trick_id,
+        stance=body.stance,
         storage_key=storage_key,
         storage_url="",
         duration_seconds=body.duration_seconds,

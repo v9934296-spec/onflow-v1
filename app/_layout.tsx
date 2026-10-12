@@ -15,7 +15,6 @@ import { JetBrainsMono_400Regular } from "@expo-google-fonts/jetbrains-mono";
 import { queryClient } from "@/store/queryClient";
 import { useAuthStore } from "@/store/authStore";
 import { useBillingStore } from "@/store/billingStore";
-import { useSessionStore } from "@/store/sessionStore";
 import { useSkaterProfileStore } from "@/store/skaterProfileStore";
 import { initOutbox } from "@/store/outbox";
 import { reconcileOwnedWork, subscribeReconcileTriggers } from "@/store/reconcile";
@@ -48,7 +47,6 @@ function AuthGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     void initOutbox();
     void hydrate();
-    useSessionStore.getState().hydrateFromKv();
   }, [hydrate]);
 
   useEffect(() => {

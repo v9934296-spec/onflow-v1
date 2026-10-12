@@ -1,5 +1,6 @@
-import type { Attempt, AttemptOutcome } from "../domain/models";
+import type { Attempt, AttemptOutcome, SelectedTrick } from "../domain/models";
 import { mintAttemptId } from "../domain/mappers/ids";
+import type { SessionId } from "../domain/types/ids";
 import { useAuthStore } from "./authStore";
 import { useSessionAttemptsStore } from "./sessionAttempts";
 import { useSessionStore } from "./sessionStore";
@@ -9,14 +10,22 @@ import { useSessionStore } from "./sessionStore";
  * The attempt is persisted locally before any request is made and stays
  * queued until the server accepts it — the outcome is never lost to a dropped
  * connection. Resolves true when the server has it, false when it is queued.
+ *
+ * `clip` pins the call to the clip's own session and trick (a result reopened
+ * from History); without it the current session and selected trick are used.
  */
-export async function recordOutcome(outcome: AttemptOutcome): Promise<boolean> {
-  const { session, trick } = useSessionStore.getState();
+export async function recordOutcome(
+  outcome: AttemptOutcome,
+  clip?: { sessionId: SessionId | null; trick: SelectedTrick | null },
+): Promise<boolean> {
+  const current = useSessionStore.getState();
+  const sessionId = clip ? clip.sessionId : current.session?.id ?? null;
+  const trick = clip ? clip.trick : current.trick;
   const userId = useAuthStore.getState().userId;
-  if (!session || !trick || !userId) return false;
+  if (!sessionId || !trick || !userId) return false;
   const attempt: Attempt = {
     id: mintAttemptId(globalThis.crypto?.randomUUID?.() ?? `att-${Date.now()}`),
-    sessionId: session.id,
+    sessionId,
     trickId: trick.trickId,
     canonicalName: trick.canonicalName,
     outcome,

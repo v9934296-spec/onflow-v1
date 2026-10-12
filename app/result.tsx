@@ -1,10 +1,11 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
+import * as FileSystem from "expo-file-system";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { attemptsForSession, mergeAttempts, nextAttemptNumber } from "@/domain/attempts";
 import { leaveDecision } from "@/domain/leaveGuard";
-import type { AnalysisResult, AttemptOutcome } from "@/domain/models";
+import type { AnalysisResult, AttemptOutcome, OutboxRow } from "@/domain/models";
 import type { CatalogErrorKind } from "@/domain/outbox";
 import {
   completedResult,
@@ -12,7 +13,9 @@ import {
   jobPollDelayMs,
   type ResultLoadPhase,
 } from "@/domain/resultLoad";
-import { pollJob } from "@/store/upload";
+import { getOutbox } from "@/store/outbox";
+import { useAuthStore } from "@/store/authStore";
+import { pollJob, setOutboxOutcome } from "@/store/upload";
 import { queryClient } from "@/store/queryClient";
 import { recordOutcome } from "@/store/attempts";
 import { closeSession } from "@/store/sessionActions";
@@ -46,10 +49,11 @@ import { color, space, textStyle } from "@/ui/tokens";
  * persisted before any request (truth rule 6).
  */
 export default function ResultScreen() {
-  const { clipId } = useLocalSearchParams<{ clipId: string }>();
+  const { clipId, localId } = useLocalSearchParams<{ clipId: string; localId?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const trick = useSessionStore((s) => s.trick);
+  const currentUserId = useAuthStore((s) => s.userId);
+  const selectedTrick = useSessionStore((s) => s.trick);
   const session = useSessionStore((s) => s.session);
   const confirmed = useSessionAttemptsStore((s) => s.confirmed);
   const pending = useSessionAttemptsStore((s) => s.pending);
@@ -64,8 +68,43 @@ export default function ResultScreen() {
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [saving, setSaving] = useState(false);
+  /** The outbox row this clip came from: its own trick, local file and recorded call. */
+  const [row, setRow] = useState<OutboxRow | null>(null);
+  const [localFileExists, setLocalFileExists] = useState<boolean | null>(null);
+  const [recorded, setRecorded] = useState(false);
+  const trick = row?.trick ?? selectedTrick;
   const offline = useOffline();
   const wasOffline = useRef(offline);
+
+  useEffect(() => {
+    if (!localId) return;
+    let cancelled = false;
+    void getOutbox(localId).then((found) => {
+      if (cancelled || !found || found.ownerUserId !== currentUserId) return;
+      setRow(found);
+      if (found.outcome) {
+        setOutcome(found.outcome);
+        setRecorded(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [localId, currentUserId]);
+
+
+  useEffect(() => {
+    if (!row?.localUri) {
+      setLocalFileExists(null);
+      return;
+    }
+    let active = true;
+    setLocalFileExists(null);
+    void FileSystem.getInfoAsync(row.localUri)
+      .then((info) => { if (active) setLocalFileExists(info.exists); })
+      .catch(() => { if (active) setLocalFileExists(false); });
+    return () => { active = false; };
+  }, [row?.localUri, playbackKey]);
 
   useEffect(() => {
     const hit = completedResult(queryClient.getQueryData<AnalysisResult>(["result", clipId]));
@@ -133,12 +172,12 @@ export default function ResultScreen() {
 
   // This clip's attempt number: the one being recorded now.
   const attemptNumber = useMemo(() => {
-    if (!trick || !session) return null;
+    if (recorded || !trick || !session) return null;
     return nextAttemptNumber(
       attemptsForSession(mergeAttempts(confirmed, pending), session.id),
       trick.trickId,
     );
-  }, [trick, session, confirmed, pending]);
+  }, [recorded, trick, session, confirmed, pending]);
 
   if (phase !== "ready" || !analysis) {
     return (
@@ -191,8 +230,8 @@ export default function ResultScreen() {
     <ScreenSafeArea>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: space.xl }}>
         <MediaStage
-          uri={analysis.videoPlaybackUrl}
-          fileExists={null}
+          uri={localFileExists === true && row ? row.localUri : analysis.videoPlaybackUrl ?? row?.localUri ?? null}
+          fileExists={localFileExists}
           playbackKey={playbackKey}
           accessibilityLabel={`${trick?.canonicalName ?? "Attempt"} footage`}
           onRetry={() => setPlaybackKey((n) => n + 1)}
@@ -260,7 +299,7 @@ export default function ResultScreen() {
             {outcomePrompt.toUpperCase()}
           </Text>
         </View>
-        <OutcomeSelector value={outcome} onChange={setOutcome} />
+        <OutcomeSelector value={outcome} onChange={(next) => (recorded ? undefined : setOutcome(next))} />
         <OnFlowDivider />
 
         {disagrees && outcome ? (
@@ -344,9 +383,11 @@ export default function ResultScreen() {
 
   /** Persisted locally before the request; queued when offline. Never lost. */
   async function save(): Promise<void> {
-    if (!outcome) return;
+    if (!outcome || recorded) return;
     setSaving(true);
-    await recordOutcome(outcome);
+    await recordOutcome(outcome, row ? { sessionId: row.sessionId, trick } : undefined);
+    if (localId) await setOutboxOutcome(localId, outcome);
+    setRecorded(true);
     setSaving(false);
   }
 

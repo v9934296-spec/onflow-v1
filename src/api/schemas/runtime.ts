@@ -131,3 +131,15 @@ export const appleAuthSchema = z.object({
   user_id: z.string().min(1),
   is_new_user: z.boolean().optional(),
 });
+
+export const clipHistoryListSchema = z.object({
+  clips: z.array(z.object({
+    id: z.string().min(1),
+    session_id: z.string().nullable().optional(),
+    trick_id: z.string().nullable().optional(),
+    stance: z.string().nullable().optional(),
+    upload_status: z.string(),
+    duration_seconds: z.number().nullable().optional(),
+    created_at: z.string().min(1),
+  })),
+});

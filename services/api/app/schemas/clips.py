@@ -210,6 +210,21 @@ class JobListItem(BaseModel):
     thumbnail_url: str | None = None
 
 
+
+class ClipHistoryItem(BaseModel):
+    id: str
+    session_id: str | None = None
+    trick_id: str | None = None
+    stance: str | None = None
+    upload_status: str
+    duration_seconds: float | None = None
+    created_at: str
+
+
+class ClipHistoryList(BaseModel):
+    clips: list[ClipHistoryItem] = Field(default_factory=list)
+
+
 class ClipInitiateUploadRequest(BaseModel):
     session_id: str | None = None
     duration_seconds: float = Field(gt=0, le=30)
@@ -225,6 +240,10 @@ class ClipInitiateUploadRequest(BaseModel):
             "ended session can accept a delayed upload only when capture predates "
             "ended_at. Omitted by onflow-lite; the 24h window still applies."
         ),
+    )
+    stance: Literal["regular", "fakie", "switch", "nollie"] | None = Field(
+        default=None,
+        description="Skater-selected stance for the called trick; passed to review metadata.",
     )
 
 

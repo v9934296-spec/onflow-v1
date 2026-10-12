@@ -4,11 +4,14 @@ import {
   analyzingPhase,
   backoffDue,
   classifyHttpFailure,
+  historyRowHref,
   progressFraction,
   resumeHref,
+  retryFrom,
   toCatalogErrorKind,
 } from "../outbox";
-import { mintLocalId, mintUserId } from "../mappers/ids";
+import { stanceWire } from "../tricks";
+import { mintClipId, mintLocalId, mintUserId } from "../mappers/ids";
 import type { OutboxRow } from "../models";
 
 function row(partial: Partial<OutboxRow>): OutboxRow {
@@ -74,5 +77,58 @@ describe("outbox rules", () => {
     expect(backoffDue(null)).toBe(true);
     expect(backoffDue(new Date(Date.now() + 10_000).toISOString())).toBe(false);
     expect(backoffDue(new Date(Date.now() - 1000).toISOString())).toBe(true);
+  });
+});
+
+describe("v1 integration rules", () => {
+  it("maps worker failure_reason codes to catalog kinds", () => {
+    expect(toCatalogErrorKind("video_unreadable", "analysis_failed")).toBe("clip_unreadable");
+    expect(toCatalogErrorKind("internal_error", "unknown")).toBe("analysis_failed");
+    expect(toCatalogErrorKind("enqueue_failed", "unknown")).toBe("analysis_failed");
+  });
+
+  it("retries a failed clip the server holds through complete-upload, not a new upload", () => {
+    const next = retryFrom(
+      row({ state: "failed_permanent", clipId: mintClipId("c1"), errorKind: "analysis_failed" }),
+    );
+    expect(next?.state).toBe("requesting_analysis");
+    expect(next?.clipId).toBe("c1");
+    expect(next?.errorKind).toBeNull();
+  });
+
+  it("restarts the upload when the server never accepted the clip", () => {
+    const next = retryFrom(row({ state: "failed_permanent", errorKind: "upload_failed_retryable" }));
+    expect(next?.state).toBe("pending");
+  });
+
+  it("never retries unreadable, oversize, quota or auth failures", () => {
+    for (const errorKind of ["clip_unreadable", "clip_too_large", "quota_exhausted", "auth_expired"]) {
+      expect(retryFrom(row({ state: "failed_permanent", errorKind }))).toBeNull();
+    }
+    expect(retryFrom(row({ state: "ready", clipId: mintClipId("c2") }))).toBeNull();
+  });
+
+  it("clears backoff on a skater retry of a retryable row", () => {
+    const next = retryFrom(row({ state: "failed_retryable", nextRetryAt: "2099-01-01T00:00:00Z" }));
+    expect(next?.state).toBe("failed_retryable");
+    expect(next?.nextRetryAt).toBeNull();
+  });
+
+  it("links History rows to the saved result or back through Analyzing", () => {
+    expect(historyRowHref(row({ state: "ready", clipId: mintClipId("c3") }))).toBe(
+      "/result?clipId=c3&localId=local-1",
+    );
+    expect(historyRowHref(row({ state: "failed_permanent" }))).toBe("/analyzing?localId=local-1");
+    expect(historyRowHref(row({ state: "analyzing", clipId: mintClipId("c4") }))).toBe(
+      "/analyzing?localId=local-1",
+    );
+    expect(historyRowHref(row({ state: "cancelled" }))).toBeNull();
+  });
+
+  it("sends stance as the backend's lowercase value and drops unknowns", () => {
+    expect(stanceWire("Switch")).toBe("switch");
+    expect(stanceWire("Regular")).toBe("regular");
+    expect(stanceWire("Sideways")).toBeUndefined();
+    expect(stanceWire(null)).toBeUndefined();
   });
 });
