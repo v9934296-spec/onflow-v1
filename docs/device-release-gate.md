@@ -54,7 +54,7 @@ access tokens, signed URLs, or raw personal footage in bug reports.
 ## Gemini feedback quality gate (NOT satisfied by mock or prompt inspection)
 
 `services/api/tests/regression/test_gemini_hallucination.py` is an existing
-LIVE Gem-ini regression runner; `fixtures/registry.json` is currently empty.
+LIVE Gemini regression runner; `fixtures/registry.json` is currently empty.
 Populate it with **consented, ground-truth-labeled** clips kept outside public
 Git. Aim for **20–30 clips** across lands/misses, varied stances, daylight/
 low-light, occlusion, off-camera landing and no-skater footage. A competent
