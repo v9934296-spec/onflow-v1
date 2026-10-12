@@ -21,6 +21,7 @@ const api = vi.hoisted(() => ({
   initiateUpload: vi.fn(),
   completeUpload: vi.fn(),
   fetchClipJob: vi.fn(),
+  refreshUpload: vi.fn(),
 }));
 vi.mock("../../api/endpoints", () => api);
 
@@ -183,4 +184,38 @@ describe("upload pipeline (v1 → services/api contract)", () => {
     expect(rows.get("local-1")?.outcome).toBe("landed");
     expect(rows.get("local-1")?.state).toBe("ready");
   });
+  it("rejects local:// pseudo upload URLs instead of reporting analysis started", async () => {
+    api.initiateUpload.mockResolvedValue({
+      ok: true,
+      data: { ...initiated("clip-local").data, upload_url: "local://upload/clip-local" },
+    });
+    rows.set("local-1", row({}));
+    const result = await runOutboxRow("local-1");
+    expect(result?.state).toBe("failed_permanent");
+    expect(api.completeUpload).not.toHaveBeenCalled();
+  });
+
+  it("resumes a failed PUT with a refreshed signed URL and the original clip id", async () => {
+    const fs = await import("expo-file-system");
+    vi.mocked(fs.uploadAsync)
+      .mockResolvedValueOnce({ status: 503 } as never)
+      .mockResolvedValueOnce({ status: 200 } as never);
+    api.initiateUpload.mockResolvedValue(initiated("clip-retry"));
+    api.refreshUpload.mockResolvedValue({
+      ok: true,
+      data: { ...initiated("clip-retry").data, upload_url: "https://r2.example/retry" },
+    });
+    api.completeUpload.mockResolvedValue({ ok: true, data: {} });
+    rows.set("local-1", row({}));
+    const failed = await runOutboxRow("local-1");
+    expect(failed?.state).toBe("failed_retryable");
+    expect(failed?.clipId).toBe("clip-retry");
+    const resumed = await retryOutboxRow("local-1");
+    expect(resumed?.state).toBe("analyzing");
+    expect(resumed?.clipId).toBe("clip-retry");
+    expect(api.initiateUpload).toHaveBeenCalledTimes(1);
+    expect(api.refreshUpload).toHaveBeenCalledWith("clip-retry");
+    expect(api.completeUpload).toHaveBeenCalledTimes(1);
+  });
+
 });
