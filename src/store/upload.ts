@@ -93,11 +93,12 @@ async function runUnlocked(localId: string): Promise<OutboxRow | null> {
   }
   if (
     existing.clipId &&
-    (existing.state === "uploaded" || existing.state === "requesting_analysis" || existing.state === "failed_retryable")
+    (existing.state === "uploading" || existing.state === "uploaded" || existing.state === "requesting_analysis" || existing.state === "failed_retryable")
   ) {
-    // A PUT that failed or died during an app suspension must re-use the
-    // existing clip with a NEW presign. Completing a missing object never works.
-    if (existing.bytesUploaded !== existing.sizeBytes) return resumeUpload(existing);
+    // Only bytesUploaded=0 proves a PUT was attempted but not confirmed.
+    // Older completed-upload records can have null bytesUploaded; do not
+    // refresh/re-PUT those because they are already in analysis recovery.
+    if (existing.bytesUploaded === 0) return resumeUpload(existing);
     return completePipeline(existing);
   }
   return initiatePipeline(existing);
