@@ -19,8 +19,7 @@ def test_health(client: TestClient) -> None:
     assert body["status"] == "ok"
     assert isinstance(body.get("gemini_configured"), bool)
     assert body.get("gemini_configured") is False
-    assert isinstance(body.get("twelvelabs_configured"), bool)
-    assert body.get("twelvelabs_configured") is False
+    assert "twelvelabs_configured" not in body
     assert isinstance(body.get("clip_review_ready"), bool)
     assert body.get("clip_review_ready") is False
 
