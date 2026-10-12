@@ -3,7 +3,6 @@ import { analyzingFailureKind, toCatalogErrorKind, type CatalogErrorKind } from 
 
 /** Same cadence as Analyzing: wait visibly before calling the job slow. */
 export const RESULT_SLOW_MS = 45_000;
-export const RESULT_POLL_CAP_MS = 5 * 60_000;
 
 export type ResultLoadPhase = "loading" | "slow" | "ready" | "failed";
 
@@ -25,7 +24,7 @@ export function completedResult(cached: AnalysisResult | null | undefined): Anal
 }
 
 export function jobPollDelayMs(elapsedMs: number): number {
-  return elapsedMs > 30_000 ? 5_000 : 2_000;
+  return elapsedMs > 15 * 60_000 ? 30_000 : elapsedMs > 5 * 60_000 ? 15_000 : elapsedMs > 30_000 ? 5_000 : 2_000;
 }
 
 /**
@@ -46,6 +45,10 @@ export function interpretResultLoad(input: {
   }
 
   if (!input.poll.ok) {
+    // A temporary gateway or rate-limit response is not evidence the worker failed.
+    if (["server", "rate_limited", "cancelled"].includes(input.poll.errorKind)) {
+      return waiting(input.elapsedMs);
+    }
     return {
       phase: "failed",
       analysis: null,
@@ -66,9 +69,6 @@ export function interpretResultLoad(input: {
       keepPolling: false,
     };
   }
-  if (input.elapsedMs >= RESULT_POLL_CAP_MS) {
-    return { phase: "failed", analysis: null, errorKind: "analysis_failed", keepPolling: false };
-  }
   return waiting(input.elapsedMs);
 }
 
@@ -77,6 +77,6 @@ function waiting(elapsedMs: number): ResultLoadView {
     phase: elapsedMs >= RESULT_SLOW_MS ? "slow" : "loading",
     analysis: null,
     errorKind: null,
-    keepPolling: elapsedMs < RESULT_POLL_CAP_MS,
+    keepPolling: true,
   };
 }
