@@ -1,4 +1,4 @@
-"""Launch configuration: no Gemini / Twelve Labs call, honest result, no charge.
+"""Launch configuration: no Gemini call, honest result, no charge.
 
 Also pins the onflow-v1 payload additions (trick hint + stance reach the job
 metadata), cross-account job reads, and retry-after-failure without a second
@@ -29,7 +29,6 @@ def providers_off(monkeypatch: pytest.MonkeyPatch) -> None:
         raise AssertionError("provider must not be called when disabled")
 
     monkeypatch.setattr(clip_worker, "analyze_clip_with_gemini", _no_provider)
-    monkeypatch.setattr(clip_worker, "analyze_clip_with_twelvelabs", _no_provider)
     monkeypatch.setattr(
         clip_worker,
         "analyze_video_first_pass",
