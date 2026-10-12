@@ -1,5 +1,5 @@
 import { Pressable, Text } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { color, space, textStyle } from "@/ui/tokens";
 import { EmptyState } from "@/ui/components/States";
 import { SyncStatus } from "@/ui/components/SyncStatus";
@@ -10,7 +10,7 @@ import { useSessionAttemptsStore } from "@/store/sessionAttempts";
 import { useSessionStore } from "@/store/sessionStore";
 import { reconcileOwnedWork } from "@/store/reconcile";
 import { useOffline } from "@/ui/hooks/useOffline";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { OutboxRow } from "@/domain/models";
 import { historyRowHref } from "@/domain/outbox";
 
@@ -24,12 +24,31 @@ export default function HistoryScreen() {
   const offline = useOffline();
   const [rows, setRows] = useState<OutboxRow[]>([]);
   const [clipsQueued, setClipsQueued] = useState(0);
-  useEffect(() => {
-    if (!userId) return;
-    void listOutboxForUser(userId).then(setRows);
-    void listRecoverable(userId).then((recoverable) => setClipsQueued(recoverable.length));
-    void useSessionAttemptsStore.getState().load(userId, useSessionStore.getState().session?.id ?? null);
-  }, [userId]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!userId) {
+        setRows([]);
+        setClipsQueued(0);
+        return;
+      }
+      let active = true;
+      const refresh = () => {
+        void listOutboxForUser(userId).then((next) => {
+          if (active) setRows(next);
+        });
+        void listRecoverable(userId).then((next) => {
+          if (active) setClipsQueued(next.length);
+        });
+      };
+      refresh();
+      void useSessionAttemptsStore.getState().load(userId, useSessionStore.getState().session?.id ?? null);
+      const interval = setInterval(refresh, 5_000);
+      return () => {
+        active = false;
+        clearInterval(interval);
+      };
+    }, [userId]),
+  );
 
   return (
     <ScreenSafeArea style={{ padding: space.xl, gap: space.md }}>
