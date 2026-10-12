@@ -49,3 +49,14 @@ async def test_analyze_clip_missing_key_raises_not_configured_not_bare_exception
     with pytest.raises(GeminiPipelineError) as ei:
         await analyze_clip_with_gemini("/any/path.mp4", meta, settings=cfg)
     assert ei.value.reason == "gemini_not_configured"
+
+
+def test_health_exposes_safe_storage_mode_and_release_id(
+    monkeypatch: pytest.MonkeyPatch, client: TestClient
+) -> None:
+    monkeypatch.setenv("RAILWAY_GIT_COMMIT_SHA", "test-sha-123")
+    r = client.get("/health")
+    assert r.status_code == 200
+    assert r.json()["storage_backend"] in ("s3", "local")
+    assert r.json()["release_sha"] == "test-sha-123"
+    assert "s3_secret_key" not in r.json()
