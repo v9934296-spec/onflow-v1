@@ -5,9 +5,8 @@ import { ConfirmDialog } from "@/ui/components/Form";
 import { ScreenHeader, ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "expo-router";
-import { listOutboxForUser, purgeOutboxForUser } from "@/store/outbox";
-import { deleteAccount, exportAccount } from "@/api/endpoints";
-import { kv, kvUserKeys } from "@/store/kv";
+import { listOutboxForUser } from "@/store/outbox";
+import { requestAccountDeletion, requestAccountExport } from "@/store/accountActions";
 import { useEffect, useState } from "react";
 
 export default function ProfileScreen() {
@@ -31,7 +30,7 @@ export default function ProfileScreen() {
     setBusy(true);
     setError(null);
     try {
-      const res = await exportAccount();
+      const res = await requestAccountExport();
       if (!res.ok) {
         setError("Your data could not be exported. Check your connection and try again.");
         return;
@@ -53,25 +52,12 @@ export default function ProfileScreen() {
     setError(null);
     const owner = userId;
     try {
-      const result = await deleteAccount();
+      const result = await requestAccountDeletion(owner);
       if (!result.ok) {
         setError("Account deletion could not be requested. Try again while connected.");
         return;
       }
-      await purgeOutboxForUser(owner);
-      for (const key of [
-        kvUserKeys.activeSessionId(owner),
-        kvUserKeys.activeSession(owner),
-        kvUserKeys.selectedTrick(owner),
-        kvUserKeys.pendingSessionEnd(owner),
-        kvUserKeys.pendingAttempts(owner),
-        kvUserKeys.onboardingDraft(owner),
-        kvUserKeys.skaterProfile(owner),
-      ]) {
-        kv.delete(key);
-      }
       setConfirmDelete(false);
-      await signOut();
     } catch {
       setError("Your request may have been received, but local cleanup was interrupted. Check your account status.");
     } finally {
