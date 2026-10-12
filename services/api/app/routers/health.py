@@ -56,13 +56,10 @@ def clip_queue_snapshot(db: Session) -> dict[str, int | bool | None]:
 @router.get("/health")
 def health(db: Session = Depends(get_db)) -> dict[str, str | bool]:
     """
-    Liveness plus whether clip-review providers are configured (no secret values).
-    When gemini_configured is false, free-tier jobs may complete with review_method
-    provider_unavailable. Pro tier requires twelvelabs_configured unless rollback flag is set.
+    Liveness and Gemini configuration; both free and Pro reviews use Gemini.
     """
     settings = get_settings()
     gemini_ok = bool((settings.gemini_api_key or "").strip())
-    tl_ok = bool((settings.twelvelabs_api_key or "").strip())
     try:
         db.exec(text("SELECT 1")).one()
     except Exception as err:
@@ -71,9 +68,8 @@ def health(db: Session = Depends(get_db)) -> dict[str, str | bool]:
         "status": "ok",
         "db": "ok",
         "gemini_configured": gemini_ok,
-        "twelvelabs_configured": tl_ok,
         "analysis_providers_enabled": settings.analysis_providers_enabled,
-        "clip_review_ready": settings.analysis_providers_enabled and gemini_ok and tl_ok,
+        "clip_review_ready": settings.analysis_providers_enabled and gemini_ok,
     }
 
 
