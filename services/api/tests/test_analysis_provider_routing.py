@@ -9,6 +9,7 @@ from app.core.tiers import (
     normalized_review_model_for_provider,
     resolve_analysis_provider_for_tier,
     resolve_gemini_model_for_tier,
+    tier_gets_deep_enrichment,
 )
 
 
@@ -67,3 +68,10 @@ def test_production_provider_gate_requires_gemini(monkeypatch: pytest.MonkeyPatc
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     with pytest.raises(ValueError, match="ONFLOW_GEMINI_API_KEY"):
         Settings()
+
+
+def test_pro_only_gets_expensive_second_pass() -> None:
+    assert tier_gets_deep_enrichment("pro") is True
+    assert tier_gets_deep_enrichment("coach") is True
+    for tier in ("free", "free_expired", "trial", "session_reup", None):
+        assert tier_gets_deep_enrichment(tier) is False
