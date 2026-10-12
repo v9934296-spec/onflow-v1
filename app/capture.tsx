@@ -75,11 +75,19 @@ export default function CaptureScreen() {
    */
   async function finish(uri: string, durationSeconds: number, mediaKind: MediaKind) {
     const capturedAt = new Date().toISOString();
-    const info = await FileSystem.getInfoAsync(uri);
-    const sizeBytes = info.exists && "size" in info && typeof info.size === "number" ? info.size : 1;
+    const info = await FileSystem.getInfoAsync(uri, { size: true });
+    if (!info.exists || !("size" in info) || typeof info.size !== "number" || info.size <= 0) {
+      setError("clip_unreadable");
+      return;
+    }
+    const sizeBytes = info.size;
     if (sizeBytes > compressionContract.maxBytes * 0.8) setLargeFile(true);
     if (sizeBytes > compressionContract.maxBytes) {
       setError("clip_too_large");
+      return;
+    }
+    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+      setError("clip_unreadable");
       return;
     }
     if (durationSeconds > compressionContract.maxDurationSeconds) {
@@ -155,7 +163,7 @@ export default function CaptureScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: color.bg }}>
-      <CameraView ref={camera} style={{ flex: 1 }} mode="video" mute={false}>
+      <CameraView ref={camera} style={{ flex: 1 }} mode="video" mute={false} videoQuality="720p" videoBitrate={4_000_000}>
         <CameraScrims />
         <View
           style={{
@@ -217,6 +225,8 @@ export default function CaptureScreen() {
                   try {
                     const clip = await camera.current?.recordAsync({
                       maxDuration: compressionContract.maxDurationSeconds,
+                      maxFileSize: compressionContract.maxBytes,
+                      codec: "avc1",
                     });
                     const seconds = startedAt.current
                       ? Math.min(
@@ -226,6 +236,8 @@ export default function CaptureScreen() {
                       : compressionContract.maxDurationSeconds;
                     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
                     if (clip?.uri) await finish(clip.uri, seconds, "recorded");
+                  } catch {
+                    setError("clip_unreadable");
                   } finally {
                     startedAt.current = null;
                     setRecording(false);
@@ -264,7 +276,11 @@ async function pickLibrary(
   const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"] });
   if (picked.canceled || !picked.assets[0]) return;
   const asset = picked.assets[0];
-  const duration = Math.max(1, (asset.duration ?? 1000) / 1000);
+  if (asset.duration == null || !Number.isFinite(asset.duration) || asset.duration <= 0) {
+    setError("clip_unreadable");
+    return;
+  }
+  const duration = asset.duration / 1000;
   if (duration > compressionContract.maxDurationSeconds) {
     setError("clip_too_long");
     return;
