@@ -13,7 +13,7 @@ import { useOffline } from "@/ui/hooks/useOffline";
 import { useCallback, useState } from "react";
 import type { OutboxRow } from "@/domain/models";
 import { historyRowHref } from "@/domain/outbox";
-import { fetchClipHistory } from "@/api/endpoints";
+import { fetchServerClipHistory } from "@/store/history";
 import type { ClipHistoryItem } from "@/domain/models";
 
 export default function HistoryScreen() {
@@ -43,7 +43,7 @@ export default function HistoryScreen() {
         void listRecoverable(userId).then((next) => {
           if (active) setClipsQueued(next.length);
         });
-        void fetchClipHistory().then((res) => {
+        void fetchServerClipHistory().then((res) => {
           if (active && res.ok) setServerRows(res.data);
         });
       };
