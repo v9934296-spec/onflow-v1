@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -48,6 +48,7 @@ export default function ReviewScreen() {
   const confirmed = useSessionAttemptsStore((s) => s.confirmed);
   const pending = useSessionAttemptsStore((s) => s.pending);
   const [busy, setBusy] = useState(false);
+  const enqueueInFlight = useRef(false);
   const [failed, setFailed] = useState(false);
   const [playbackKey, setPlaybackKey] = useState(0);
   const [fileExists, setFileExists] = useState<boolean | null>(null);
@@ -165,19 +166,30 @@ export default function ReviewScreen() {
           loading={busy}
           disabled={fileExists === false}
           onPress={() => {
+            if (enqueueInFlight.current) return;
+            enqueueInFlight.current = true;
             setBusy(true);
             void (async () => {
-              const localId = await enqueueClip({
-                uri: clip.uri,
-                durationSeconds: clip.durationSeconds,
-                sizeBytes: clip.sizeBytes,
-                mimeType: mimeFromUri(clip.uri),
-                mediaKind: clip.mediaKind,
-                capturedAt: clip.capturedAt,
-              });
-              setBusy(false);
-              if (localId) router.replace(`/analyzing?localId=${localId}`);
-              else setFailed(true);
+              try {
+                const localId = await enqueueClip({
+                  uri: clip.uri,
+                  durationSeconds: clip.durationSeconds,
+                  sizeBytes: clip.sizeBytes,
+                  mimeType: mimeFromUri(clip.uri),
+                  mediaKind: clip.mediaKind,
+                  capturedAt: clip.capturedAt,
+                });
+                if (localId) {
+                  router.replace(`/analyzing?localId=${localId}`);
+                  return;
+                }
+                setFailed(true);
+              } catch {
+                setFailed(true);
+              } finally {
+                setBusy(false);
+                enqueueInFlight.current = false;
+              }
             })();
           }}
         />
