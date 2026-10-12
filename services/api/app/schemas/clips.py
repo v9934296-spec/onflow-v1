@@ -210,6 +210,21 @@ class JobListItem(BaseModel):
     thumbnail_url: str | None = None
 
 
+
+class ClipHistoryItem(BaseModel):
+    id: str
+    session_id: str | None = None
+    trick_id: str | None = None
+    stance: str | None = None
+    upload_status: str
+    duration_seconds: float | None = None
+    created_at: str
+
+
+class ClipHistoryList(BaseModel):
+    clips: list[ClipHistoryItem] = Field(default_factory=list)
+
+
 class ClipInitiateUploadRequest(BaseModel):
     session_id: str | None = None
     duration_seconds: float = Field(gt=0, le=30)
