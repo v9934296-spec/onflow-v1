@@ -37,6 +37,7 @@ export default function CaptureScreen() {
   const importLaunched = useRef(false);
   const camera = useRef<CameraView>(null);
   const startedAt = useRef<number | null>(null);
+  const recordingInFlight = useRef(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [recording, setRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -217,7 +218,9 @@ export default function CaptureScreen() {
             recording={recording}
             onPress={() => {
               void (async () => {
-                if (!recording) {
+                if (!recordingInFlight.current) {
+                  // Acquire synchronously; state updates can lag rapid taps.
+                  recordingInFlight.current = true;
                   setRecording(true);
                   startedAt.current = Date.now();
                   setElapsed(0);
@@ -240,6 +243,7 @@ export default function CaptureScreen() {
                     setError("clip_unreadable");
                   } finally {
                     startedAt.current = null;
+                    recordingInFlight.current = false;
                     setRecording(false);
                     setElapsed(0);
                   }
