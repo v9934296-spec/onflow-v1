@@ -218,4 +218,27 @@ describe("upload pipeline (v1 → services/api contract)", () => {
     expect(api.completeUpload).toHaveBeenCalledTimes(1);
   });
 
+  it("stops retrying product quota errors and preserves the paywall signal", async () => {
+    api.initiateUpload.mockResolvedValue({
+      ok: false,
+      error: { status: 429, kind: "quota", code: "quota_exhausted" },
+    });
+    rows.set("local-1", row({}));
+    const result = await runOutboxRow("local-1");
+    expect(result?.state).toBe("failed_permanent");
+    expect(result?.errorKind).toBe("quota_exhausted");
+    expect(api.completeUpload).not.toHaveBeenCalled();
+  });
+
+  it("does not treat an ordinary rate-limit 429 as an exhausted subscription", async () => {
+    api.initiateUpload.mockResolvedValue({
+      ok: false,
+      error: { status: 429, kind: "rate_limited", code: "hourly_analysis_cap_reached" },
+    });
+    rows.set("local-1", row({}));
+    const result = await runOutboxRow("local-1");
+    expect(result?.state).toBe("failed_retryable");
+    expect(result?.errorKind).toBe("rate_limited");
+  });
+
 });
