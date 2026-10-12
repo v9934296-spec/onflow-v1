@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,7 +25,8 @@ import { OnFlowHeader } from "@/ui/components/OnFlowHeader";
 import { OnFlowMeta } from "@/ui/components/OnFlowMeta";
 import { ScreenSafeArea } from "@/ui/components/ScreenChrome";
 import { SessionClock } from "@/ui/components/SessionClock";
-import { Skeleton } from "@/ui/components/States";
+import { ErrorPanel, Skeleton } from "@/ui/components/States";
+import { toCatalogErrorKind, type CatalogErrorKind } from "@/domain/outbox";
 import { SyncStatus } from "@/ui/components/SyncStatus";
 import { reconcileOwnedWork } from "@/store/reconcile";
 import { TrickSlate } from "@/ui/components/TrickSlate";
@@ -58,6 +59,8 @@ export default function SessionScreen() {
   const [processing, setProcessing] = useState(0);
   const [endOpen, setEndOpen] = useState(false);
   const [starting, setStarting] = useState(false);
+  const startingRef = useRef(false);
+  const [startError, setStartError] = useState<CatalogErrorKind | null>(null);
   const offline = useOffline();
 
   const sessionId = session?.id ?? null;
@@ -109,17 +112,29 @@ export default function SessionScreen() {
         </View>
         <OnFlowDivider />
         <View style={{ padding: space.lg, paddingBottom: Math.max(insets.bottom, space.md) }}>
+          {startError ? <ErrorPanel kind={startError} onPrimary={() => setStartError(null)} /> : null}
           <OnFlowButton
             label="Start session"
             size="hero"
             haptic
             loading={starting}
             onPress={() => {
+              if (startingRef.current) return;
+              startingRef.current = true;
               setStarting(true);
-              void startFreeSkateSession().then((res) => {
-                setStarting(false);
-                if (res.ok) router.push("/trick");
-              });
+              setStartError(null);
+              void (async () => {
+                try {
+                  const res = await startFreeSkateSession();
+                  if (res.ok) router.push("/trick");
+                  else setStartError(toCatalogErrorKind(res.error.code ?? res.error.kind));
+                } catch {
+                  setStartError("unknown");
+                } finally {
+                  startingRef.current = false;
+                  setStarting(false);
+                }
+              })();
             }}
           />
         </View>
