@@ -22,8 +22,6 @@ export default function AnalyzingScreen() {
   const [job, setJob] = useState<AnalysisResult | null>(null);
   const [slow, setSlow] = useState(false);
   const [retryNonce, setRetryNonce] = useState(0);
-  /** Polling gave up while the server still reports the job in flight. */
-  const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setSlow(true), 45_000);
@@ -100,11 +98,10 @@ export default function AnalyzingScreen() {
       }
       if (latest && isTerminal(latest)) return;
       if (latest?.state === "failed_retryable") return;
-      if (Date.now() - started > 5 * 60_000) {
-        setTimedOut(true);
-        return;
-      }
-      delay = Date.now() - started > 30_000 ? 5000 : 2000;
+      // Never report a failed review just because Gemini/queue is slow.
+      // Continue polling while the screen is open, with slower checks over time.
+      const elapsed = Date.now() - started;
+      delay = elapsed > 15 * 60_000 ? 30_000 : elapsed > 5 * 60_000 ? 15_000 : elapsed > 30_000 ? 5_000 : 2_000;
       timer = setTimeout(() => void tick(), delay);
     };
 
@@ -127,7 +124,7 @@ export default function AnalyzingScreen() {
     return () => sub.remove();
   }, [router]);
 
-  const phase = timedOut ? "FAILED" : analyzingPhase(row?.state ?? "pending", job?.status ?? null);
+  const phase = analyzingPhase(row?.state ?? "pending", job?.status ?? null);
   const fraction = row ? progressFraction(row) : null;
   const failureKind: ErrorKind = asErrorKind(
     analyzingFailureKind(row?.errorKind ?? null, job?.failureReason ?? null),
@@ -156,7 +153,6 @@ export default function AnalyzingScreen() {
       if (!localId) return;
       setJob(null);
       setSlow(false);
-      setTimedOut(false);
       void retryOutboxRow(localId).then(() => setRetryNonce((n) => n + 1));
       return;
     }
