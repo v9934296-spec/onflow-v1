@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { Alert, View } from "react-native";
 import { Tabs, useRouter } from "expo-router";
 import { color, fontFamily, touchTarget } from "@/ui/tokens";
 import { TabGlyph } from "@/ui/components/TabGlyph";
@@ -10,8 +10,10 @@ import { useAuthStore } from "@/store/authStore";
 import { startFreeSkateSession } from "@/store/sessionActions";
 import { ConfirmDialog } from "@/ui/components/Form";
 import { CenterActionButton } from "@/ui/components/CenterActionButton";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { LocalId } from "@/domain/types/ids";
+import { toCatalogErrorKind } from "@/domain/outbox";
+import { errorCopy } from "@/ui/copy/errors";
 
 export default function TabsLayout() {
   const router = useRouter();
@@ -20,6 +22,7 @@ export default function TabsLayout() {
   const hydrating = useSessionStore((s) => s.hydrating);
   const userId = useAuthStore((s) => s.userId);
   const [drafts, setDrafts] = useState(0);
+  const startInFlight = useRef(false);
   const [resumeId, setResumeId] = useState<LocalId | null>(null);
   const [resumeOpen, setResumeOpen] = useState(false);
 
@@ -97,8 +100,20 @@ export default function TabsLayout() {
                   onPress={() => {
                     void (async () => {
                       if (action === "START") {
-                        const created = await startFreeSkateSession();
-                        if (created.ok) router.push("/trick");
+                        if (startInFlight.current) return;
+                        startInFlight.current = true;
+                        try {
+                          const created = await startFreeSkateSession();
+                          if (created.ok) router.push("/trick");
+                          else {
+                            const kind = toCatalogErrorKind(created.error.code ?? created.error.kind);
+                            Alert.alert("Couldn't start session", errorCopy[kind].body);
+                          }
+                        } catch {
+                          Alert.alert("Couldn't start session", "Check your connection and try again.");
+                        } finally {
+                          startInFlight.current = false;
+                        }
                         return;
                       }
                       if (action === "CHOOSE TRICK") {
