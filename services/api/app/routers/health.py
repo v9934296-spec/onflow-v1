@@ -3,13 +3,14 @@ from __future__ import annotations
 import os
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import func, text
 from sqlmodel import Session, select
 
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.models import ClipJobModel
+from app.services.object_storage import S3Storage
 
 router = APIRouter(tags=["health"])
 
@@ -54,7 +55,7 @@ def clip_queue_snapshot(db: Session) -> dict[str, int | bool | None]:
 
 
 @router.get("/health")
-def health(db: Session = Depends(get_db)) -> dict[str, str | bool]:
+def health(request: Request, db: Session = Depends(get_db)) -> dict[str, str | bool]:
     """
     Liveness and Gemini configuration; both free and Pro reviews use Gemini.
     """
@@ -70,11 +71,13 @@ def health(db: Session = Depends(get_db)) -> dict[str, str | bool]:
         "gemini_configured": gemini_ok,
         "analysis_providers_enabled": settings.analysis_providers_enabled,
         "clip_review_ready": settings.analysis_providers_enabled and gemini_ok,
+        "storage_backend": "s3" if isinstance(request.app.state.storage, S3Storage) else "local",
+        "release_sha": os.getenv("RAILWAY_GIT_COMMIT_SHA") or os.getenv("GIT_COMMIT_SHA") or "unknown",
     }
 
 
 @router.get("/health/deep")
-def health_deep(db: Session = Depends(get_db)) -> dict:
+def health_deep(request: Request, db: Session = Depends(get_db)) -> dict:
     settings = get_settings()
     checks = {"db_read": False, "db_write": False, "gemini_configured": False}
 
@@ -98,4 +101,6 @@ def health_deep(db: Session = Depends(get_db)) -> dict:
     if not all(checks.values()):
         raise HTTPException(status_code=503, detail=checks)
     clip_queue = clip_queue_snapshot(db)
-    return {"status": "ok", "checks": checks, "clip_queue": clip_queue}
+    return {"status": "ok", "checks": checks, "clip_queue": clip_queue,
+            "storage_backend": "s3" if isinstance(request.app.state.storage, S3Storage) else "local",
+            "release_sha": os.getenv("RAILWAY_GIT_COMMIT_SHA") or os.getenv("GIT_COMMIT_SHA") or "unknown"}

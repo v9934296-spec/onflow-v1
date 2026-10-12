@@ -141,6 +141,19 @@ export async function initiateUpload(input: {
   });
 }
 
+/** Renew a pending clip's signed PUT without making another clip or charging quota. */
+export async function refreshUpload(clipId: string) {
+  return apiRequest<{
+    clip_id: string;
+    upload_url: string;
+    upload_method: string;
+    upload_expires_at: string;
+    storage_key: string;
+  }>(`/api/v1/clips/${encodeURIComponent(clipId)}/refresh-upload`, {
+    method: "POST",
+  });
+}
+
 export async function completeUpload(clipId: string) {
   return apiRequest<unknown>(`/api/v1/clips/${clipId}/complete-upload`, { method: "POST" });
 }

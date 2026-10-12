@@ -72,3 +72,36 @@ def test_initiate_upload_nonexistent_session_returns_404(authed_client: TestClie
     }
     r = authed_client.post("/api/v1/clips/initiate-upload", json=payload)
     assert r.status_code == 404
+
+
+def test_refresh_upload_reuses_pending_clip_without_charging_new_quota(
+    authed_client: TestClient,
+) -> None:
+    initial = authed_client.post("/api/v1/clips/initiate-upload", json=_UPLOAD_BODY)
+    assert initial.status_code == 201, initial.text
+    original = initial.json()
+    refreshed = authed_client.post(
+        f"/api/v1/clips/{original['clip_id']}/refresh-upload"
+    )
+    assert refreshed.status_code == 200, refreshed.text
+    payload = refreshed.json()
+    assert payload["clip_id"] == original["clip_id"]
+    assert payload["storage_key"] == original["storage_key"]
+    assert payload["upload_url"]
+    with Session(get_engine()) as db:
+        from app.models import ClipJobModel
+        assert db.get(ClipJobModel, original["clip_id"]) is None
+
+
+def test_refresh_upload_is_private_and_rejects_unknown_clips(
+    authed_client: TestClient,
+) -> None:
+    original = authed_client.post("/api/v1/clips/initiate-upload", json=_UPLOAD_BODY)
+    clip_id = original.json()["clip_id"]
+    another_user = authed_client.post(
+        f"/api/v1/clips/{clip_id}/refresh-upload",
+        headers={"Authorization": "Bearer dev:other-user-999"},
+    )
+    assert another_user.status_code == 404
+    missing = authed_client.post("/api/v1/clips/no-such-clip/refresh-upload")
+    assert missing.status_code == 404

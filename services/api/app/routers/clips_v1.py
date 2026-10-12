@@ -40,7 +40,7 @@ def _require_upload_feature(request: Request, user_id: str) -> None:
     db = request.app.state.db
     tier = normalize_tier(db.get_user_tier(user_id))
     if not tier_has_feature(tier, "upload_clip"):
-        raise HTTPException(status_code=403, detail=_TRIAL_ENDED_UPLOAD_MESSAGE)
+        raise HTTPException(status_code=403, detail="tier_gate")
 
 
 def _resolve_session_for_upload(
@@ -149,6 +149,43 @@ def initiate_clip_upload(
         upload_url=upload_url,
         upload_expires_at=iso_z(expires_at),
         storage_key=storage_key,
+    )
+
+
+
+@router.post(
+    "/{clip_id}/refresh-upload",
+    response_model=ClipInitiateUploadResponse,
+)
+@limiter.limit(clip_abuse_limit_per_day, key_func=clip_submission_key)
+@limiter.limit(clip_abuse_limit_per_hour, key_func=clip_submission_key)
+def refresh_clip_upload(
+    clip_id: str,
+    request: Request,
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ClipInitiateUploadResponse:
+    """Renew an upload URL for the original uncompleted clip (no new clip or charge).
+
+    Presigned URL expiry and failed PUTs must not create duplicate records. Only
+    the clip owner may renew; after completion the object must not be overwritten.
+    """
+    clip = db.get(ClipModel, clip_id)
+    if clip is None or clip.user_id != user_id or clip.deleted_at is not None:
+        raise HTTPException(status_code=404, detail="Clip not found.")
+    if clip.upload_status != "pending":
+        raise HTTPException(status_code=409, detail="Clip upload already completed.")
+    if not clip.storage_key or not clip.content_type:
+        raise HTTPException(status_code=409, detail="Clip upload metadata unavailable.")
+
+    upload_url, expires_at = presigned_put_url(
+        request.app.state.storage, clip.storage_key, clip.content_type
+    )
+    return ClipInitiateUploadResponse(
+        clip_id=clip.id,
+        upload_url=upload_url,
+        upload_expires_at=iso_z(expires_at),
+        storage_key=clip.storage_key,
     )
 
 

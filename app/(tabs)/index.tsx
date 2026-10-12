@@ -1,6 +1,6 @@
 import { ScrollView, Text, View } from "react-native";
 import { color, radius, space, textStyle } from "@/ui/tokens";
-import { EmptyState, QueuedBadge, Skeleton } from "@/ui/components/States";
+import { EmptyState, ErrorPanel, QueuedBadge, Skeleton } from "@/ui/components/States";
 import { SyncStatus } from "@/ui/components/SyncStatus";
 import { Button } from "@/ui/components/Button";
 import { SessionCard, TrickCard, VideoThumbnail } from "@/ui/components/Cards";
@@ -8,7 +8,7 @@ import { DeckMark, RailMark, ScreenHero, ScreenSafeArea } from "@/ui/components/
 import { useSessionStore } from "@/store/sessionStore";
 import { startFreeSkateSession } from "@/store/sessionActions";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { kv, kvKeys } from "@/store/kv";
 import { useAuthStore } from "@/store/authStore";
 import { listOutboxForUser, listRecoverable } from "@/store/outbox";
@@ -20,6 +20,7 @@ import { useSessionAttemptsStore } from "@/store/sessionAttempts";
 import { reconcileOwnedWork } from "@/store/reconcile";
 import { styleCopy } from "@/ui/copy/personalization";
 import { useOffline } from "@/ui/hooks/useOffline";
+import { toCatalogErrorKind, type CatalogErrorKind } from "@/domain/outbox";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -34,6 +35,9 @@ export default function HomeScreen() {
   const sessionEndPending = useSessionStore((s) => s.pendingEnd != null);
   const offline = useOffline();
   const [queued, setQueued] = useState(0);
+  const [starting, setStarting] = useState(false);
+  const startingRef = useRef(false);
+  const [startError, setStartError] = useState<CatalogErrorKind | null>(null);
   const [latest, setLatest] = useState<OutboxRow | null>(null);
   const [recentTricks, setRecentTricks] = useState<CatalogTrick[]>([]);
 
@@ -97,13 +101,31 @@ export default function HomeScreen() {
         </View>
         <EmptyState title="Start a session" body="Free skate. No mode screen. One tap to begin." />
         <View style={{ paddingHorizontal: space.lg, paddingBottom: space.lg }}>
+          {startError ? <ErrorPanel kind={startError} onPrimary={() => setStartError(null)} /> : null}
           <Button
             label="Start session"
+            loading={starting}
             onPress={() => {
-              kv.set(kvKeys.onboardingDone, "1");
-              void startFreeSkateSession().then((res) => {
-                if (res.ok) router.push("/trick");
-              });
+              if (startingRef.current) return;
+              startingRef.current = true;
+              setStarting(true);
+              setStartError(null);
+              void (async () => {
+                try {
+                  const res = await startFreeSkateSession();
+                  if (res.ok) {
+                    kv.set(kvKeys.onboardingDone, "1");
+                    router.push("/trick");
+                  } else {
+                    setStartError(toCatalogErrorKind(res.error.code ?? res.error.kind));
+                  }
+                } catch {
+                  setStartError("unknown");
+                } finally {
+                  startingRef.current = false;
+                  setStarting(false);
+                }
+              })();
             }}
           />
         </View>

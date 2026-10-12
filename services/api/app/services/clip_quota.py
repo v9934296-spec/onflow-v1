@@ -157,10 +157,7 @@ def _decide_quota(
 
     raise HTTPException(
         status_code=429,
-        detail=(
-            "Monthly free analysis limit reached. Upgrade, purchase a Re-Up Pack, "
-            "or wait until next month."
-        ),
+        detail="quota_exhausted",
     )
 
 
@@ -220,10 +217,7 @@ def _count_monthly_free_jobs(session: Session, user_id: str) -> int:
 def _quota_exhausted_http() -> HTTPException:
     return HTTPException(
         status_code=429,
-        detail=(
-            "Monthly free analysis limit reached. Upgrade, purchase a Re-Up Pack, "
-            "or wait until next month."
-        ),
+        detail="quota_exhausted",
     )
 
 

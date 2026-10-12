@@ -37,9 +37,9 @@ function classify(status: number, body: unknown, retryAfter?: number): ApiError 
   const code = structuredCode(body);
   if (status === 401) return { kind: "unauthorized", status, code };
   if (status === 429) {
-    return { kind: "rate_limited", status, code, retryAfterSeconds: retryAfter };
+    return { kind: code === "quota_exhausted" ? "quota" : "rate_limited", status, code, retryAfterSeconds: retryAfter };
   }
-  if (status === 403 && (code === "tier_gate" || typeof code === "string")) {
+  if (status === 403 && (code === "tier_gate" || code === "quota_exhausted")) {
     return { kind: "quota", status, code };
   }
   if (status >= 500) return { kind: "server", status, code };
