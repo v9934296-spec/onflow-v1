@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { SelectedTrick, SkateSession } from "../domain/models";
-import { kv, kvKeys } from "./kv";
+import { kv, kvUserKeys } from "./kv";
+import { useAuthStore } from "./authStore";
 
 export interface PendingSessionEnd {
   readonly sessionId: string;
@@ -18,6 +19,7 @@ interface SessionSlice {
   setTrick: (trick: SelectedTrick | null) => void;
   setPendingEnd: (pending: PendingSessionEnd | null) => void;
   hydrateFromKv: () => void;
+  clearInMemory: () => void;
 }
 
 function readJson<T>(key: string): T | null {
@@ -38,31 +40,39 @@ export const useSessionStore = create<SessionSlice>((set) => ({
   pendingEnd: null,
   setHydrating: (hydrating) => set({ hydrating }),
   setSession: (session) => {
+    const userId = useAuthStore.getState().userId;
+    if (!userId) return;
     if (session) {
-      kv.set(kvKeys.activeSessionId, session.id);
-      kv.set(kvKeys.activeSession, JSON.stringify(session));
+      kv.set(kvUserKeys.activeSessionId(userId), session.id);
+      kv.set(kvUserKeys.activeSession(userId), JSON.stringify(session));
     } else {
-      kv.delete(kvKeys.activeSessionId);
-      kv.delete(kvKeys.activeSession);
+      kv.delete(kvUserKeys.activeSessionId(userId));
+      kv.delete(kvUserKeys.activeSession(userId));
     }
     set({ session });
   },
   setTrick: (trick) => {
-    if (trick) kv.set(kvKeys.selectedTrick, JSON.stringify(trick));
-    else kv.delete(kvKeys.selectedTrick);
+    const userId = useAuthStore.getState().userId;
+    if (!userId) return;
+    if (trick) kv.set(kvUserKeys.selectedTrick(userId), JSON.stringify(trick));
+    else kv.delete(kvUserKeys.selectedTrick(userId));
     set({ trick });
   },
   setPendingEnd: (pendingEnd) => {
-    if (pendingEnd) kv.set(kvKeys.pendingSessionEnd, JSON.stringify(pendingEnd));
-    else kv.delete(kvKeys.pendingSessionEnd);
+    const userId = useAuthStore.getState().userId;
+    if (!userId) return;
+    if (pendingEnd) kv.set(kvUserKeys.pendingSessionEnd(userId), JSON.stringify(pendingEnd));
+    else kv.delete(kvUserKeys.pendingSessionEnd(userId));
     set({ pendingEnd });
   },
   hydrateFromKv: () => {
+    const userId = useAuthStore.getState().userId;
     set({
-      trick: readJson<SelectedTrick>(kvKeys.selectedTrick),
-      session: readJson<SkateSession>(kvKeys.activeSession),
-      pendingEnd: readJson<PendingSessionEnd>(kvKeys.pendingSessionEnd),
+      trick: userId ? readJson<SelectedTrick>(kvUserKeys.selectedTrick(userId)) : null,
+      session: userId ? readJson<SkateSession>(kvUserKeys.activeSession(userId)) : null,
+      pendingEnd: userId ? readJson<PendingSessionEnd>(kvUserKeys.pendingSessionEnd(userId)) : null,
       hydrating: false,
     });
   },
+  clearInMemory: () => set({ session: null, trick: null, pendingEnd: null, hydrating: false }),
 }));
