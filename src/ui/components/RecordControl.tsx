@@ -29,8 +29,6 @@ export function RecordControl({
       accessibilityState={{ disabled: Boolean(disabled), selected: recording }}
       disabled={disabled}
       onPress={onPress}
-      onLongPress={onPress}
-      delayLongPress={180}
       style={({ pressed }) => {
         const feedback = pressFeedback({
           pressed: pressed && !disabled,
