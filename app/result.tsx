@@ -13,6 +13,7 @@ import {
   type ResultLoadPhase,
 } from "@/domain/resultLoad";
 import { getOutbox } from "@/store/outbox";
+import { useAuthStore } from "@/store/authStore";
 import { pollJob, setOutboxOutcome } from "@/store/upload";
 import { queryClient } from "@/store/queryClient";
 import { recordOutcome } from "@/store/attempts";
@@ -50,6 +51,7 @@ export default function ResultScreen() {
   const { clipId, localId } = useLocalSearchParams<{ clipId: string; localId?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const currentUserId = useAuthStore((s) => s.userId);
   const selectedTrick = useSessionStore((s) => s.trick);
   const session = useSessionStore((s) => s.session);
   const confirmed = useSessionAttemptsStore((s) => s.confirmed);
@@ -76,7 +78,7 @@ export default function ResultScreen() {
     if (!localId) return;
     let cancelled = false;
     void getOutbox(localId).then((found) => {
-      if (cancelled || !found) return;
+      if (cancelled || !found || found.ownerUserId !== currentUserId) return;
       setRow(found);
       if (found.outcome) {
         setOutcome(found.outcome);
@@ -86,7 +88,7 @@ export default function ResultScreen() {
     return () => {
       cancelled = true;
     };
-  }, [localId]);
+  }, [localId, currentUserId]);
 
   useEffect(() => {
     const hit = completedResult(queryClient.getQueryData<AnalysisResult>(["result", clipId]));
