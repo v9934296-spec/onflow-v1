@@ -1,7 +1,8 @@
 import { createSession, endSession as endSessionApi, fetchSession } from "../api/endpoints";
 import type { ApiErrorKind } from "../api/types";
 import { useSessionStore } from "./sessionStore";
-import { kv, kvKeys } from "./kv";
+import { kv, kvUserKeys } from "./kv";
+import { useAuthStore } from "./authStore";
 import { mintTrickId } from "../domain/mappers/ids";
 import type { CatalogTrick, SelectedTrick } from "../domain/models";
 
@@ -24,7 +25,9 @@ export async function startFreeSkateSession() {
 }
 
 export async function restoreActiveSession() {
-  const id = kv.get(kvKeys.activeSessionId);
+  const userId = useAuthStore.getState().userId;
+  if (!userId) return;
+  const id = kv.get(kvUserKeys.activeSessionId(userId));
   if (!id) return;
   const res = await fetchSession(id);
   if (res.ok) {
