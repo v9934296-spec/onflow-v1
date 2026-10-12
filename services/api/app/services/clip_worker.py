@@ -22,6 +22,7 @@ from app.core.config import get_settings
 from app.core.resilience import gemini_circuit
 from app.core.tiers import (
     normalize_tier,
+    tier_gets_deep_enrichment,
     resolve_gemini_model_for_tier,
 )
 from app.repositories.clip_jobs import ClipJobRepository
@@ -756,7 +757,7 @@ async def run_clip_job(
             enrichment: dict[str, Any] | None = None
             enrichment_attempted = False
             enrichment_model: str | None = None
-            if settings.gemini_api_key:
+            if tier_gets_deep_enrichment(tier_norm) and settings.gemini_api_key:
                 enrichment_model = resolve_gemini_model_for_tier(tier_norm, settings)
                 if gemini_circuit.is_open:
                     logger.warning(
