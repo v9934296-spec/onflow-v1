@@ -277,7 +277,7 @@ def test_free_expired_cannot_initiate_upload(client: TestClient) -> None:
     r = client.post("/api/v1/clips/initiate-upload", json=_UPLOAD_BODY, headers=headers)
 
     assert r.status_code == 403
-    assert "free trial has ended" in r.json()["detail"].lower()
+    assert r.json()["detail"] == "tier_gate"
 
 
 def test_free_expired_cannot_create_session(client: TestClient) -> None:
