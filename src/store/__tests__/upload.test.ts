@@ -22,6 +22,7 @@ const api = vi.hoisted(() => ({
   completeUpload: vi.fn(),
   fetchClipJob: vi.fn(),
   refreshUpload: vi.fn(),
+  reportUploadPutFailure: vi.fn(async () => {}),
 }));
 vi.mock("../../api/endpoints", () => api);
 
@@ -192,6 +193,37 @@ describe("upload pipeline (v1 → services/api contract)", () => {
     rows.set("local-1", row({}));
     const result = await runOutboxRow("local-1");
     expect(result?.state).toBe("failed_permanent");
+    expect(api.completeUpload).not.toHaveBeenCalled();
+  });
+
+  it("reports only the HTTP status when a signed storage PUT fails", async () => {
+    const fs = await import("expo-file-system");
+    vi.mocked(fs.uploadAsync).mockResolvedValueOnce({ status: 403 } as never);
+    api.initiateUpload.mockResolvedValue(initiated("clip-status"));
+    rows.set("local-1", row({}));
+
+    const failed = await runOutboxRow("local-1");
+
+    expect(failed?.state).toBe("failed_retryable");
+    expect(api.reportUploadPutFailure).toHaveBeenCalledWith("clip-status", "presigned_put:http_403");
+    expect(api.completeUpload).not.toHaveBeenCalled();
+  });
+
+  it("never sends an exception message or signed URL to telemetry", async () => {
+    const fs = await import("expo-file-system");
+    vi.mocked(fs.uploadAsync).mockRejectedValueOnce(
+      new TypeError("Request failed https://r2.example/put?X-Amz-Signature=secret"),
+    );
+    api.initiateUpload.mockResolvedValue(initiated("clip-exception"));
+    rows.set("local-1", row({}));
+
+    const failed = await runOutboxRow("local-1");
+
+    expect(failed?.state).toBe("failed_retryable");
+    expect(api.reportUploadPutFailure).toHaveBeenCalledWith(
+      "clip-exception",
+      "presigned_put:exception_TypeError",
+    );
     expect(api.completeUpload).not.toHaveBeenCalled();
   });
 

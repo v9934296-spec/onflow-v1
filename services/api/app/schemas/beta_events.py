@@ -30,6 +30,7 @@ ALLOWED_CLIENT_EVENT_KINDS: frozenset[str] = frozenset(
         "notifications_viewed",
         "capture_completed",
         "capture_failed",
+        "upload_put_failed",
         "land_reported",
         "log_viewed",
         "log_exported",

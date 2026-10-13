@@ -141,6 +141,21 @@ export async function initiateUpload(input: {
   });
 }
 
+/** Best-effort, authenticated diagnostics for direct storage PUT failures.
+ * Never send the presigned URL, error message, token, or local file path.
+ */
+export async function reportUploadPutFailure(clipId: string, diagnostic: string): Promise<void> {
+  await apiRequest("/api/v1/beta/client-events", {
+    method: "POST",
+    json: {
+      kind: "upload_put_failed",
+      job_id: clipId,
+      error_detail: diagnostic.slice(0, 200),
+    },
+    timeoutMs: 5_000,
+  });
+}
+
 /** Renew a pending clip's signed PUT without making another clip or charging quota. */
 export async function refreshUpload(clipId: string) {
   return apiRequest<{
