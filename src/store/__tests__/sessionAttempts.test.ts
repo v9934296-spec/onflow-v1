@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useSessionAttemptsStore } from "../sessionAttempts";
 import { kv, kvUserKeys } from "../kv";
 import { attemptsForSession, mergeAttempts, nextAttemptNumber } from "../../domain/attempts";
@@ -29,6 +29,13 @@ beforeEach(() => {
     pending: [],
     queue: [],
   });
+});
+
+const originalUrl = process.env.EXPO_PUBLIC_API_URL;
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  process.env.EXPO_PUBLIC_API_URL = originalUrl;
 });
 
 describe("session attempts queue", () => {
@@ -87,5 +94,38 @@ describe("session attempts queue", () => {
     await store().load("u1", "s2");
     expect(store().pending.map((a) => a.sessionId)).toEqual(["s1"]);
     expect(attemptsForSession(mergeAttempts(store().confirmed, store().pending), "s2")).toEqual([]);
+  });
+
+  it("saves an outcome through the online sync path after persisting it locally", async () => {
+    process.env.EXPO_PUBLIC_API_URL = "https://api.example.test";
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init?: RequestInit) => {
+      if (!init?.body) return new Response(JSON.stringify({ attempts: [] }));
+      const body = JSON.parse(String(init.body));
+      return new Response(JSON.stringify({ accepted: body.attempts.map((row: Attempt) => row.id), rejected: [] }));
+    }));
+    await store().load("u1", "s1");
+
+    expect(await store().record("u1", attempt("a1", "s1", "2026-09-05T10:00:00Z"))).toBe(true);
+    expect(store().pending).toEqual([]);
+    expect(store().confirmed.map((row) => row.id)).toEqual(["a1"]);
+  });
+
+  it("reconciles an immutable conflict using the server's accepted record", async () => {
+    process.env.EXPO_PUBLIC_API_URL = "https://api.example.test";
+    const serverAttempt = {
+      id: "a1", session_id: "s1", trick_id: "kickflip", canonical_name: "Kickflip",
+      outcome: "missed", logged_at: "2026-09-05T10:00:01Z",
+    };
+    let fetches = 0;
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      fetches += 1;
+      if (fetches === 2) return new Response(JSON.stringify({ accepted: [], rejected: [{ id: "a1", reason: "immutable_conflict" }] }));
+      return new Response(JSON.stringify({ attempts: fetches === 3 ? [serverAttempt] : [] }));
+    }));
+    await store().load("u1", "s1");
+    await store().record("u1", attempt("a1", "s1", "2026-09-05T10:00:00Z"));
+
+    expect(store().pending).toEqual([]);
+    expect(store().confirmed).toMatchObject([{ id: "a1", outcome: "missed" }]);
   });
 });

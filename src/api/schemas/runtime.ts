@@ -65,6 +65,28 @@ export const clipJobSchema = z
   })
   .passthrough();
 
+export const clipInitiateUploadSchema = z.object({
+  clip_id: z.string().min(1),
+  upload_url: z.string().min(1),
+  upload_method: z.literal("PUT").optional(),
+  upload_expires_at: z.string().min(1),
+  storage_key: z.string().min(1),
+});
+
+export const sessionAttemptSyncSchema = z.object({
+  accepted: z.array(z.string()),
+  rejected: z.array(
+    z.object({
+      id: z.string().min(1),
+      reason: z.string().min(1),
+    }),
+  ),
+});
+
+export const sessionAttemptsResponseSchema = z.object({
+  attempts: z.array(z.unknown()),
+});
+
 export const sessionSchema = z
   .object({
     id: z.string().min(1),
