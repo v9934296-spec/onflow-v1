@@ -1,5 +1,5 @@
 import * as FileSystem from "expo-file-system";
-import { completeUpload, fetchClipJob, initiateUpload, refreshUpload } from "../api/endpoints";
+import { completeUpload, fetchClipJob, initiateUpload, refreshUpload, reportUploadPutFailure } from "../api/endpoints";
 import type { ApiError } from "../api/types";
 import type { OutboxRow } from "../domain/models";
 import {
@@ -141,6 +141,7 @@ async function initiatePipeline(existing: OutboxRow): Promise<OutboxRow> {
 
   const put = await putFile(initiated.data.upload_url, row.localUri, row.mimeType);
   if (!put.ok) {
+    recordPutFailure(row.clipId, put.diagnostic);
     row = withRetry(row, "upload_failed_retryable");
     await upsertOutbox(row);
     return row;
@@ -174,6 +175,7 @@ async function resumeUpload(existing: OutboxRow): Promise<OutboxRow> {
   await upsertOutbox(row);
   const put = await putFile(refreshed.data.upload_url, row.localUri, row.mimeType);
   if (!put.ok) {
+    recordPutFailure(row.clipId, put.diagnostic);
     row = withRetry(row, "upload_failed_retryable");
     await upsertOutbox(row);
     return row;
@@ -279,20 +281,40 @@ function isSignedUploadUrl(url: string): boolean {
   }
 }
 
+/**
+ * The signed URL includes credentials in its query string. Report only a
+ * categorical reason and clip ID to our authenticated first-party endpoint.
+ * Best-effort so a telemetry outage can never block retrying a saved clip.
+ */
+function recordPutFailure(clipId: string | null, diagnostic: string): void {
+  if (!clipId) return;
+  void reportUploadPutFailure(clipId, diagnostic).catch(() => undefined);
+}
+
 async function putFile(
   url: string,
   localUri: string,
   mime: string,
-): Promise<{ ok: boolean }> {
-  if (!isSignedUploadUrl(url)) return { ok: false };
+): Promise<{ ok: boolean; diagnostic: string }> {
+  if (!isSignedUploadUrl(url)) {
+    return { ok: false, diagnostic: "presigned_put:invalid_url" };
+  }
   try {
     const result = await FileSystem.uploadAsync(url, localUri, {
       httpMethod: "PUT",
       headers: { "Content-Type": mime },
       uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
     });
-    return { ok: result.status >= 200 && result.status < 300 };
-  } catch {
-    return { ok: false };
+    return {
+      ok: result.status >= 200 && result.status < 300,
+      diagnostic: `presigned_put:http_${result.status}`,
+    };
+  } catch (error) {
+    // Error.message can contain the entire signed URL; never transmit it.
+    const name = error instanceof Error ? error.name.replace(/[^A-Za-z]/g, "").slice(0, 40) : "Unknown";
+    return {
+      ok: false,
+      diagnostic: `presigned_put:exception_${name || "Unknown"}`,
+    };
   }
 }
